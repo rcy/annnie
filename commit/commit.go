@@ -16,7 +16,7 @@ func URL() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("https://github.com/rcy/annie/commit/%s", Rev), nil
+		return fmt.Sprintf("https://github.com/rcy/annnie/commit/%s", Rev), nil
 	}
 	return "", err
 }

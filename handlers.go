@@ -184,7 +184,7 @@ func addHandlers(b *bot.Bot) {
 	})
 
 	b.Handle(`^!help`, func(params responder.Responder) error {
-		params.Privmsgf(params.Target(), "%s: %s", params.Nick(), "https://github.com/rcy/annie/blob/main/handlers.go")
+		params.Privmsgf(params.Target(), "%s: %s", params.Nick(), "https://github.com/rcy/annnie/blob/main/handlers.go")
 		return nil
 	})
 }

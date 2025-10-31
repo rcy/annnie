@@ -129,7 +129,7 @@ func Connect(es *evoke.Service, nick string, channel string, server string, sasl
 
 	bot.Events = es
 	bot.Channel = channel
-	bot.Conn = irc.IRC(nick, "github.com/rcy/annie")
+	bot.Conn = irc.IRC(nick, "github.com/rcy/annnie")
 	bot.Conn.VerboseCallbackHandler = false
 	bot.Conn.Debug = true
 	bot.Conn.UseTLS = true

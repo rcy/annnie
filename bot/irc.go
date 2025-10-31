@@ -123,7 +123,7 @@ func (b *Bot) Loop() {
 	b.Conn.Loop()
 }
 
-func Connect(es *evoke.Service, nick string, channel string, server string) (*Bot, error) {
+func Connect(es *evoke.Service, nick string, channel string, server string, saslLogin string, saslPassword string) (*Bot, error) {
 	initialized := make(chan bool)
 	var bot Bot
 
@@ -133,6 +133,9 @@ func Connect(es *evoke.Service, nick string, channel string, server string) (*Bo
 	bot.Conn.VerboseCallbackHandler = false
 	bot.Conn.Debug = true
 	bot.Conn.UseTLS = true
+	bot.Conn.UseSASL = true
+	bot.Conn.SASLLogin = saslLogin
+	bot.Conn.SASLPassword = saslPassword
 	bot.Conn.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	bot.Conn.AddCallback("001", func(e *irc.Event) {
 		bot.Conn.Join(channel)

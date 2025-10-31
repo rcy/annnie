@@ -13,7 +13,7 @@ kill_timeout = "5s"
 
 [env]
   IRC_CHANNEL = "#emb"
-  IRC_NICK = "annie"
+  IRC_NICK = "annnie"
   IRC_SERVER = "irc.libera.chat:6697"
   PORT = "8080"
   ROOT_URL = "https://annie.fly.dev"

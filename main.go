@@ -33,7 +33,9 @@ func main() {
 		es,
 		util.Getenv("IRC_NICK"),
 		util.Getenv("IRC_CHANNEL"),
-		util.Getenv("IRC_SERVER"))
+		util.Getenv("IRC_SERVER"),
+		util.Getenv("SASL_LOGIN"),
+		util.Getenv("SASL_PASSWORD"))
 	if err != nil {
 		log.Fatal(err)
 	}

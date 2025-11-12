@@ -72,6 +72,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!deauth$`, web.HandleDeauth)
 	b.Handle(`night`, bedtime.Handle)
 	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, nick), annie.Handle)
+	b.Handle(`^annie:?(.+)$`, annie.Handle) // since sabetts will never learn
 	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, nick), annie.Handle)
 	b.Handle(`^!bible (.+)$`, bible.Handle)
 	b.Handle(`^tip$`, tip.Handle)

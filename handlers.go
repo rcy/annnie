@@ -40,7 +40,7 @@ func addHandlers(b *bot.Bot) {
 
 	b.Handle(`^!catchup`, handlers.Catchup)
 	b.Handle(`^,(.+)$`, handlers.CreateNote)
-	b.Handle(`^([^\s:]+): (.+)$`, handlers.DeferredDelivery)
+	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)
 	b.Handle(`^!feedme`, handlers.AnonLink)
 	b.Handle(`^!pipehealth\b`, handlers.AnonStatus)
 	b.Handle(`(https?://\S+)`, handlers.Link)

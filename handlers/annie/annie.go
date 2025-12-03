@@ -25,14 +25,14 @@ func Handle(params responder.Responder) error {
 
 	q := model.New(db.DB.DB)
 
-	response, err := ai.Complete(ctx, openai.GPT4oMini, "categorize input into statements, questions, requests, or pleasantries.  If it is a statement, reply with the one word 'statement'.  If it is a question, reply with 'question'.  If it is a request reply with 'request', if it is a pleasantry, reply with 'pleasantry'", msg)
+	response, err := ai.Complete(ctx, openai.GPT5, "categorize input into statements, questions, requests, or pleasantries.  If it is a statement, reply with the one word 'statement'.  If it is a question, reply with 'question'.  If it is a request reply with 'request', if it is a pleasantry, reply with 'pleasantry'", msg)
 	if err != nil {
 		return err
 	}
 
 	switch response {
 	case "statement":
-		response, err := ai.Complete(ctx, openai.GPT4oMini, "you are annie, a friend hanging out in an irc channel. given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation", msg)
+		response, err := ai.Complete(ctx, openai.GPT5, "you are annie, a friend hanging out in an irc channel. given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation", msg)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ Do not refer to yourself in the third person.
 
 		systemPrompt += strings.Join(lines, "\n")
 
-		response, err := ai.Complete(ctx, openai.GPT4oMini, systemPrompt, msg)
+		response, err := ai.Complete(ctx, openai.GPT5, systemPrompt, msg)
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ Do not refer to yourself in the third person.
 
 		systemPrompt += strings.Join(lines, "\n")
 
-		response, err := ai.Complete(ctx, openai.GPT4oMini, systemPrompt, msg)
+		response, err := ai.Complete(ctx, openai.GPT5, systemPrompt, msg)
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ Someone has posted some pleasantry or small talk.
 Respond in kind, but in a very uninterested dismissive way.
 Respond in lower case, with minimal punctuation.`
 
-		response, err := ai.Complete(ctx, openai.GPT4oMini, systemPrompt, msg)
+		response, err := ai.Complete(ctx, openai.GPT5, systemPrompt, msg)
 		if err != nil {
 			return err
 		}

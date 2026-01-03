@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"goirc/image"
+	"goirc/internal/ai"
 	"goirc/internal/responder"
 	"goirc/shell"
 	"strings"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 type stack struct {
@@ -41,7 +44,12 @@ func NationalDay(params responder.Responder) error {
 		return nil
 	}
 
-	params.Privmsgf(params.Target(), "%s", event)
+	completion, err := ai.Complete(context.TODO(), openai.GPT4Dot1, "in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", event)
+	if err != nil {
+		return err
+	}
+
+	params.Privmsgf(params.Target(), "%s: %s", event, completion)
 	return nil
 }
 

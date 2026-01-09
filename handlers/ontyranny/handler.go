@@ -117,7 +117,7 @@ var lessons = []lesson{
 func Handle(params responder.Responder) error {
 	lesson := lessons[rand.IntN(len(lessons))]
 
-	params.Privmsgf(params.Target(), "%s: Lesson %d: %s %s", params.Target, lesson.Number, lesson.Text, lesson.Youtube)
+	params.Privmsgf(params.Target(), "%s: Lesson %d: %s %s", params.Target(), lesson.Number, lesson.Text, lesson.Youtube)
 
 	return nil
 }

@@ -1,4 +1,4 @@
-package ontyrrany
+package ontyranny
 
 import (
 	"goirc/internal/responder"

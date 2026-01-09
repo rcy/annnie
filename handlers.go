@@ -21,7 +21,7 @@ import (
 	"goirc/handlers/linkpool"
 	"goirc/handlers/mlb"
 	"goirc/handlers/news"
-	ontyrrany "goirc/handlers/ontyranny"
+	"goirc/handlers/ontyranny"
 	"goirc/handlers/tip"
 	"goirc/handlers/tz"
 	"goirc/handlers/weather"
@@ -82,7 +82,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!cnn\b(.+)?`, news.Handle)
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
-	b.Handle(`^!ontyrrany`, ontyrrany.Handle)
+	b.Handle(`^!ontyranny`, ontyranny.Handle)
 
 	b.Repeat(10*time.Second, handlers.DoRemind)
 	b.IdleRepeatAfterReset(8*time.Hour, handlers.POM)

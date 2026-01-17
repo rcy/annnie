@@ -1,6 +1,7 @@
 package uploads
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"goirc/bot"
@@ -152,7 +153,18 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("%s/uploads/%d", os.Getenv("ROOT_URL"), file.ID)
 
-	s.Bot.Conn.Privmsgf(s.Bot.Channel, "%s uploaded %s", nick, url)
+	note, err := s.Queries.InsertNote(context.TODO(), model.InsertNoteParams{
+		Target: s.Bot.Channel,
+		Nick:   sql.NullString{String: nick, Valid: true},
+		Kind:   "link",
+		Text:   sql.NullString{String: url, Valid: true},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("InsertNote: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	s.Bot.Conn.Privmsgf(s.Bot.Channel, "%s uploaded %s", nick, note.Text.String)
 
 	redirectURL := fmt.Sprintf("/uploads/success/%d", file.ID)
 	w.Write([]byte(redirectURL))

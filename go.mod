@@ -13,7 +13,7 @@ require (
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/olebedev/when v1.1.0
 	github.com/pariz/gountries v0.1.6
-	github.com/rcy/disco v0.2.2
+	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91
 	github.com/rcy/evoke v0.1.1
 	github.com/robfig/cron v1.2.0

@@ -11,6 +11,7 @@ import (
 	"goirc/handlers/annie"
 	"goirc/handlers/bedtime"
 	"goirc/handlers/bible"
+	"goirc/handlers/bsky"
 	"goirc/handlers/bug"
 	"goirc/handlers/day"
 	"goirc/handlers/ddate"
@@ -80,6 +81,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^date$`, ddate.Handle)
 	b.Handle(`^tz`, tz.Handle)
 	b.Handle(`^!cnn\b(.+)?`, news.Handle)
+	b.Handle(`^!bsky (.+) (.+)`, bsky.Handle)
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)

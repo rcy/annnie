@@ -40,7 +40,7 @@ func getRandomLink(domain string, query string) (string, error) {
 		domain,
 		url.QueryEscape(query)), nil)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	//req.Header.Set("Authorization", "Bearer "+token)
@@ -48,18 +48,18 @@ func getRandomLink(domain string, query string) (string, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	var response Response
 	if err := json.Unmarshal(body, &response); err != nil {
-		panic(err)
+		return "", err
 	}
 
 	var uris []string
@@ -98,14 +98,14 @@ func getSession(identifier, password string) (*SessionResponse, error) {
 	// Encode request to JSON
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Create POST request to the PDS
 	url := "https://bsky.social/xrpc/com.atproto.server.createSession"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Required headers
@@ -116,14 +116,14 @@ func getSession(identifier, password string) (*SessionResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// Decode JSON response
 	var sessionResp SessionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&sessionResp); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &sessionResp, nil

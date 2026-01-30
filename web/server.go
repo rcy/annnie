@@ -134,6 +134,10 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		})
 	})
 
+	r.Get("/.well-known/atproto-did", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("did:plc:okr63g275op4edte4fnmcqin"))
+	})
+
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
 
 	r.Route("/login", func(r chi.Router) {

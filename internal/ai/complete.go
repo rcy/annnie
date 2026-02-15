@@ -3,37 +3,34 @@ package ai
 import (
 	"context"
 	"errors"
-	"os"
+	"fmt"
 	"strings"
 
-	"github.com/sashabaranov/go-openai"
+	"github.com/openai/openai-go/v3"
 )
 
 var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
 
-func Complete(ctx context.Context, model string, system string, message string) (string, error) {
-	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+func Complete(ctx context.Context, model string, systemPrompt string, userPrompt string) (string, error) {
+	client := openai.NewClient()
 
-	resp, err := client.CreateChatCompletion(ctx,
-		openai.ChatCompletionRequest{
-			Model: model,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: system,
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: message,
-				},
-			},
-		})
+	resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Model: model,
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.SystemMessage(systemPrompt),
+			openai.UserMessage(userPrompt),
+		},
+	})
 	if err != nil {
 		if strings.Contains(err.Error(), "billing") {
 			return "", ErrBilling
 		}
 
-		return "", err
+		return "", fmt.Errorf("chat completion failed: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("no completion choices returned")
 	}
 
 	return resp.Choices[0].Message.Content, nil

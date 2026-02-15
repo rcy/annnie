@@ -12,6 +12,7 @@ require (
 	github.com/kkdai/youtube/v2 v2.8.1
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/olebedev/when v1.1.0
+	github.com/openai/openai-go/v3 v3.22.0
 	github.com/pariz/gountries v0.1.6
 	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91
@@ -75,6 +76,10 @@ require (
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
 	go.uber.org/atomic v1.11.0 // indirect

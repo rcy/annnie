@@ -6,8 +6,6 @@ import (
 	"goirc/internal/responder"
 	"goirc/news"
 	"log/slog"
-
-	"github.com/sashabaranov/go-openai"
 )
 
 func Handle(params responder.Responder) error {
@@ -23,12 +21,12 @@ func Handle(params responder.Responder) error {
 	var err error
 
 	if topic == "" {
-		result, err = news.News(ctx, 420, openai.GPT5)
+		result, err = news.News(ctx, 420)
 		if err != nil {
 			return fmt.Errorf("News: %w", err)
 		}
 	} else {
-		result, err = news.NewsByTopic(ctx, topic, 420, openai.GPT5)
+		result, err = news.NewsByTopic(ctx, topic, 420)
 		if err != nil {
 			return fmt.Errorf("NewsByTopic: %w", err)
 		}

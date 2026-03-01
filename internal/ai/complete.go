@@ -71,6 +71,14 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string, webse
 		if len(condensed.Choices) == 0 {
 			return "", fmt.Errorf("no condense choices returned")
 		}
-		return "*" + condensed.Choices[0].Message.Content, nil
+
+		response := condensed.Choices[0].Message.Content
+
+		// if there are annotations, it definitely did a web search, mark those responses
+		if len(choice.Message.Annotations) > 0 {
+			response = "*" + response
+		}
+
+		return response, nil
 	}
 }

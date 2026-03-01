@@ -53,15 +53,15 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string, webse
 
 		choice := resp.Choices[0]
 
-		if len(choice.Message.Annotations) == 0 {
+		if !websearch {
 			return choice.Message.Content, nil
 		}
 
-		// there were annotations, so result was based on web search
+		// websearch results can be long, summarize and mark them
 		condensed, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 			Model: openai.ChatModelGPT4oMini,
 			Messages: []openai.ChatCompletionMessageParamUnion{
-				openai.SystemMessage("Summarize the following into a single sentence, in lower case, with minimal punctuation."),
+				openai.SystemMessage("Summarize the following into a single sentence, in lower case, with no final period"),
 				openai.UserMessage(choice.Message.Content),
 			},
 		})

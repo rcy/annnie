@@ -48,6 +48,24 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string, webse
 
 		choice := resp.Choices[0]
 
-		return choice.Message.Content, nil
+		if len(choice.Message.Annotations) == 0 {
+			return choice.Message.Content, nil
+		}
+
+		// there were annotations, so result was based on web search
+		condensed, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+			Model: openai.ChatModelGPT4oMini,
+			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.SystemMessage("Summarize the following in one concise sentence."),
+				openai.UserMessage(choice.Message.Content),
+			},
+		})
+		if err != nil {
+			return "", fmt.Errorf("condense failed: %w", err)
+		}
+		if len(condensed.Choices) == 0 {
+			return "", fmt.Errorf("no condense choices returned")
+		}
+		return "*" + condensed.Choices[0].Message.Content, nil
 	}
 }

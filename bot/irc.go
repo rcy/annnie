@@ -133,7 +133,7 @@ func Connect(es *evoke.Service, nick string, channel string, server string, sasl
 	bot.Conn.VerboseCallbackHandler = false
 	bot.Conn.Debug = true
 	bot.Conn.UseTLS = true
-	bot.Conn.UseSASL = true
+	bot.Conn.UseSASL = false
 	bot.Conn.SASLLogin = saslLogin
 	bot.Conn.SASLPassword = saslPassword
 	bot.Conn.TLSConfig = &tls.Config{InsecureSkipVerify: true}

@@ -90,7 +90,7 @@ Do not refer to yourself in the third person.
 
 		systemPrompt += strings.Join(lines, "\n")
 
-		response, err := ai.Complete(ctx, systemPrompt, msg, false)
+		response, err := ai.Complete(ctx, systemPrompt, msg, true)
 		if err != nil {
 			return err
 		}

@@ -56,7 +56,7 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string, webse
 		condensed, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 			Model: openai.ChatModelGPT4oMini,
 			Messages: []openai.ChatCompletionMessageParamUnion{
-				openai.SystemMessage("Summarize the following in one concise sentence."),
+				openai.SystemMessage("Summarize the following into a single sentence, in lower case, with minimal punctuation."),
 				openai.UserMessage(choice.Message.Content),
 			},
 		})

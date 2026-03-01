@@ -31,6 +31,11 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string, webse
 			options.Model = openai.ChatModelGPT4oMiniSearchPreview
 			options.WebSearchOptions = openai.ChatCompletionNewParamsWebSearchOptions{
 				SearchContextSize: "low",
+				UserLocation: openai.ChatCompletionNewParamsWebSearchOptionsUserLocation{
+					Approximate: openai.ChatCompletionNewParamsWebSearchOptionsUserLocationApproximate{
+						Country: openai.String("CA"),
+					},
+				},
 			}
 		}
 

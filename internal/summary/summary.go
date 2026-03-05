@@ -20,7 +20,7 @@ type link struct {
 	URL   string
 }
 
-type completeFn func(context.Context, string, string, bool) (string, error)
+type completeFn func(context.Context, string, string) (string, error)
 type getTitleFn func(string) (string, error)
 
 type summary struct {
@@ -75,7 +75,7 @@ func (s *summary) SummarizeNotes(ctx context.Context) error {
 
 	if len(texts) > 0 {
 		completion, err := s.completeFn(ctx, "you will be provide a selection of statements shared to an irc channel over. connect these statements as a brief and engaging summary",
-			strings.Join(texts, "\n"), false)
+			strings.Join(texts, "\n"))
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ func (s *summary) SummarizeQuotes(ctx context.Context) error {
 
 	if len(texts) > 0 {
 		completion, err := s.completeFn(ctx, "you will be provide a selection of headlines. create an engaging summary of them.  omit any preamble and don't over editorialize.",
-			strings.Join(texts, "\n"), false)
+			strings.Join(texts, "\n"))
 		if err != nil {
 			return err
 		}

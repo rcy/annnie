@@ -22,9 +22,7 @@ func NewsByTopic(ctx context.Context, topic string, length int) (string, error) 
 		fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
 		fmt.Sprintf("Only consider headlines pertaining to the topic: %s.  If no headlines match the topic, expand the topic until you can report some news. \n\nHeadlines follow: %s\n",
 			topic,
-			strings.Join(headlines, ".\n")),
-		false,
-	)
+			strings.Join(headlines, ".\n")))
 	if err != nil {
 		return "", err
 	}
@@ -39,8 +37,7 @@ func News(ctx context.Context, length int) (string, error) {
 
 	completion, err := ai.Complete(ctx,
 		fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
-		strings.Join(headlines, ".\n"),
-		false)
+		strings.Join(headlines, ".\n"))
 	if err != nil {
 		return "", err
 	}

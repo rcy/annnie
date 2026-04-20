@@ -527,6 +527,39 @@ func (q *Queries) Link(ctx context.Context, id int64) (Note, error) {
 	return i, err
 }
 
+const listFiles = `-- name: ListFiles :many
+select id, created_at, nick from files order by created_at desc
+`
+
+type ListFilesRow struct {
+	ID        int64
+	CreatedAt time.Time
+	Nick      string
+}
+
+func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFiles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListFilesRow
+	for rows.Next() {
+		var i ListFilesRow
+		if err := rows.Scan(&i.ID, &i.CreatedAt, &i.Nick); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markAnonymousNoteDelivered = `-- name: MarkAnonymousNoteDelivered :one
 update notes set target = ?, created_at = current_timestamp where id = ? returning id, created_at, nick, text, kind, target, anon
 `

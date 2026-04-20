@@ -119,6 +119,9 @@ insert into files(nick,content) values (@nick, @content) returning *;
 -- name: GetFile :one
 select * from files where id = @id;
 
+-- name: ListFiles :many
+select id, created_at, nick from files order by created_at desc;
+
 -- name: UpdateNickTimezone :exec
 update nick_timezones set tz = @tz where nick = @nick;
 

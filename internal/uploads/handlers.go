@@ -33,12 +33,26 @@ var snarfTimezoneJS = `fetch("/snarf-timezone", {method: "POST", headers: {"X-Ti
 func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 	nick := r.Context().Value(auth.NickKey).(string)
 
+	files, err := s.Queries.ListFiles(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("ListFiles: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	imageNodes := make([]Node, 0, len(files))
+	for _, f := range files {
+		src := fmt.Sprintf("/uploads/%d", f.ID)
+		imageNodes = append(imageNodes, A(Href(src),
+			Img(Src(src), Style("max-width: 200px; max-height: 200px; margin: 4px;")),
+		))
+	}
+
 	HTML(
 		Head(
 			Script(Raw(snarfTimezoneJS)),
 		),
 		Body(
-			Div(ID("dropzone"), Style("height: 100vh;"),
+			Div(ID("dropzone"),
 				H1(Text("annie file uploader")),
 				P(Textf("hello, %s", nick)),
 				Form(Method("POST"), Action("uploads"), EncType("multipart/form-data"),
@@ -46,6 +60,9 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					Button(Text("Upload")),
 					P(Textf("Links to uploaded files will be sent to %s.  You can also drag and drop or paste a file to upload.", s.Bot.Channel)),
 				),
+			),
+			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
+				Group(imageNodes),
 			),
 			Script(Raw(`
 const dropzone = document.getElementById('dropzone');
@@ -84,13 +101,15 @@ const dropzone = document.getElementById('dropzone');
       }
 
       fetch('/uploads', {
-        headers: { "Accept": "application/json" },
         method: 'POST',
         body: formData
       })
-      .then(res => res.text())
-      .then(text => {
-        location.href = text;
+      .then(res => {
+        if (res.redirected) {
+          location.href = res.url;
+        } else {
+          location.href = '/uploads';
+        }
       })
       .catch(err => {
         alert('upload failed');
@@ -166,9 +185,7 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.Bot.Conn.Privmsgf(s.Bot.Channel, "%s uploaded %s", nick, note.Text.String)
 
-	redirectURL := fmt.Sprintf("/uploads/success/%d", file.ID)
-	w.Write([]byte(redirectURL))
-	http.Redirect(w, r, fmt.Sprintf(redirectURL, file.ID), http.StatusSeeOther)
+	http.Redirect(w, r, "/uploads", http.StatusSeeOther)
 }
 
 func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {

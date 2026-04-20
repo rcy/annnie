@@ -196,6 +196,7 @@ func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	w.Write(file.Content)
 }
 

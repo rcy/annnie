@@ -43,7 +43,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 	for _, f := range files {
 		src := fmt.Sprintf("/uploads/%d", f.ID)
 		imageNodes = append(imageNodes, A(Href(src),
-			Img(Src(src), Style("max-width: 200px; max-height: 200px; margin: 4px;")),
+			Img(Src(src), Loading("lazy"), Style("max-width: 200px; max-height: 200px; margin: 4px;")),
 		))
 	}
 

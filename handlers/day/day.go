@@ -90,7 +90,7 @@ func fetchDayEvents(day string) (*stack, error) {
 // TODO: this shouldn't be here
 func Image(params responder.Responder) error {
 	prompt := params.Match(1)
-	gi, err := image.GenerateDALLE(context.Background(), prompt)
+	gi, err := image.GenerateGPTImage(context.Background(), prompt)
 	if err != nil {
 		return err
 	}

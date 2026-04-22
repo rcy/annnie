@@ -12,13 +12,12 @@ require (
 	github.com/kkdai/youtube/v2 v2.8.1
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/olebedev/when v1.1.0
-	github.com/openai/openai-go/v3 v3.22.0
+	github.com/openai/openai-go/v3 v3.32.0
 	github.com/pariz/gountries v0.1.6
 	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91
 	github.com/rcy/evoke v0.1.1
 	github.com/robfig/cron v1.2.0
-	github.com/sashabaranov/go-openai v1.41.2
 	github.com/solafide-dev/gobible v1.1.1
 	github.com/sqids/sqids-go v0.4.1
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64

@@ -2,17 +2,16 @@ package image
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"goirc/db/model"
 	"goirc/internal/ai"
 	db "goirc/model"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 
-	openai "github.com/sashabaranov/go-openai"
+	openaiofficial "github.com/openai/openai-go/v3"
 )
 
 func mustGetenv(key string) string {
@@ -35,24 +34,25 @@ func (gi *GeneratedImage) URL() string {
 	return fmt.Sprintf("%s/i/%d", rootURL, gi.ID)
 }
 
-func GenerateDALLE(ctx context.Context, prompt string) (*GeneratedImage, error) {
-	client := openai.NewClient(openaiAPIKey)
+func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, error) {
+	client := openaiofficial.NewClient()
 
-	req := openai.ImageRequest{
-		Prompt:         prompt,
-		Model:          openai.CreateImageModelDallE3,
-		N:              1,
-		Size:           "1024x1024",
-		Style:          openai.CreateImageStyleNatural,
-		ResponseFormat: "url",
-	}
-
-	imgResp, err := client.CreateImage(ctx, req)
+	imgResp, err := client.Images.Generate(ctx, openaiofficial.ImageGenerateParams{
+		Prompt:  prompt,
+		Model:   openaiofficial.ImageModelGPTImage1_5,
+		N:       openaiofficial.Int(1),
+		Quality: openaiofficial.ImageGenerateParamsQualityMedium,
+	})
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "billing") {
 			return nil, ai.ErrBilling
 		}
 		return nil, err
+	}
+
+	imgBytes, err := base64.StdEncoding.DecodeString(imgResp.Data[0].B64JSON)
+	if err != nil {
+		return nil, fmt.Errorf("decoding image: %w", err)
 	}
 
 	tx, err := db.DB.BeginTx(ctx, nil)
@@ -70,12 +70,6 @@ func GenerateDALLE(ctx context.Context, prompt string) (*GeneratedImage, error) 
 		return nil, err
 	}
 
-	resp, err := http.Get(imgResp.Data[0].URL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	err = os.MkdirAll(ImageFileBase, os.FileMode(0755))
 	if err != nil {
 		return nil, err
@@ -87,7 +81,7 @@ func GenerateDALLE(ctx context.Context, prompt string) (*GeneratedImage, error) 
 	}
 	defer imgFile.Close()
 
-	_, err = io.Copy(imgFile, resp.Body)
+	_, err = imgFile.Write(imgBytes)
 	if err != nil {
 		return nil, err
 	}

@@ -39,7 +39,7 @@ func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, erro
 
 	imgResp, err := client.Images.Generate(ctx, openaiofficial.ImageGenerateParams{
 		Prompt:  prompt,
-		Model:   openaiofficial.ImageModelGPTImage1_5,
+		Model:   "gpt-image-2",
 		N:       openaiofficial.Int(1),
 		Quality: openaiofficial.ImageGenerateParamsQualityMedium,
 	})

@@ -10,6 +10,7 @@ import (
 )
 
 var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
+var ErrRejected = errors.New("Rejected")
 
 func Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
 	client := openai.NewClient()

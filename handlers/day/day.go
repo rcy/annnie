@@ -2,6 +2,7 @@ package day
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"goirc/image"
 	"goirc/internal/ai"
@@ -92,6 +93,9 @@ func Image(params responder.Responder) error {
 	prompt := params.Match(1)
 	gi, err := image.GenerateGPTImage(context.Background(), prompt)
 	if err != nil {
+		if errors.Is(err, ai.ErrRejected) {
+			return fmt.Errorf("Rejected")
+		}
 		return err
 	}
 

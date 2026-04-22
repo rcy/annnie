@@ -47,6 +47,9 @@ func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, erro
 		if strings.Contains(strings.ToLower(err.Error()), "billing") {
 			return nil, ai.ErrBilling
 		}
+		if strings.Contains(strings.ToLower(err.Error()), "rejected") {
+			return nil, ai.ErrRejected
+		}
 		return nil, err
 	}
 

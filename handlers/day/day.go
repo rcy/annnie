@@ -91,10 +91,11 @@ func fetchDayEvents(day string) (*stack, error) {
 // TODO: this shouldn't be here
 func Image(params responder.Responder) error {
 	prompt := params.Match(1)
+	start := time.Now()
 	gi, err := image.GenerateGPTImage(context.Background(), prompt)
 	if err != nil {
 		if errors.Is(err, ai.ErrRejected) {
-			return fmt.Errorf("Rejected")
+			return fmt.Errorf("Rejected in %s", time.Since(start))
 		}
 		return err
 	}

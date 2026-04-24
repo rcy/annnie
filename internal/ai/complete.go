@@ -16,7 +16,7 @@ func Complete(ctx context.Context, systemPrompt string, userPrompt string) (stri
 	client := openai.NewClient()
 
 	resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model: openai.ChatModelGPT4oMini,
+		Model: "gpt-5.5",
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.SystemMessage(systemPrompt),
 			openai.UserMessage(userPrompt),

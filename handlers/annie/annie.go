@@ -59,7 +59,7 @@ func Handle(params responder.Responder) error {
 You are annnie, a friend hanging out in an irc channel.
 The current time and date is %s.
 You have been asked a question. Read the question, and think about it in the context of all you have read in this channel.
-Respond with single sentences, in lower case, with minimal punctuation.
+Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
 Do not refer to yourself in the third person.
 `, time.Now().Format(time.RFC1123))
 
@@ -84,7 +84,7 @@ Do not refer to yourself in the third person.
 You are annnie, a friend hanging out in an irc channel.
 The current time and date is %s.
 You have been given a request. Read the request, and think about it in the context of all you have read in this channel.
-Respond with single sentences, in lower case, with minimal punctuation.
+Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
 Do not refer to yourself in the third person.
 `, time.Now().Format(time.RFC1123))
 
@@ -100,7 +100,7 @@ Do not refer to yourself in the third person.
 You are annnie, a friend hanging out in an irc channel.
 Someone has posted some pleasantry or small talk.
 Respond in kind, but in a very uninterested dismissive way.
-Respond in lower case, with minimal punctuation.`
+Respond in lower case, with minimal punctuation (commas are ok).`
 
 		response, err := ai.Complete(ctx, systemPrompt, msg)
 		if err != nil {

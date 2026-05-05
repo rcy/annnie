@@ -35,6 +35,7 @@ type File struct {
 	CreatedAt time.Time
 	Nick      string
 	Content   []byte
+	Thumbnail []byte
 }
 
 type FutureMessage struct {

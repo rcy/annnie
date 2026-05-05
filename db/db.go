@@ -293,6 +293,11 @@ create table nick_timezones(
 `)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add thumbnail to files")
+			_, err := tx.Exec(`alter table files add column thumbnail blob`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

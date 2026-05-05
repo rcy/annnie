@@ -1,6 +1,6 @@
 module goirc
 
-go 1.24.3
+go 1.25.0
 
 require (
 	github.com/BurntSushi/migration v0.0.0-20140125045755-c45b897f1335
@@ -21,8 +21,9 @@ require (
 	github.com/solafide-dev/gobible v1.1.1
 	github.com/sqids/sqids-go v0.4.1
 	github.com/thoj/go-ircevent v0.0.0-20210723090443-73e444401d64
+	golang.org/x/image v0.39.0
 	golang.org/x/net v0.38.0
-	golang.org/x/text v0.23.0
+	golang.org/x/text v0.36.0
 	maragu.dev/gomponents v1.2.0
 	modernc.org/sqlite v1.38.2
 )
@@ -86,7 +87,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/sync v0.15.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422 // indirect

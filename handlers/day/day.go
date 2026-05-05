@@ -95,7 +95,11 @@ func Image(params responder.Responder) error {
 	gi, err := image.GenerateGPTImage(context.Background(), prompt)
 	if err != nil {
 		if errors.Is(err, ai.ErrRejected) {
-			return fmt.Errorf("Rejected in %s", time.Since(start))
+			elapsed := time.Since(start)
+			if elapsed > 30*time.Second {
+				return fmt.Errorf("Aborted after %s", elapsed)
+			}
+			return fmt.Errorf("Rejected in %s", elapsed)
 		}
 		return err
 	}

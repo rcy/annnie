@@ -287,23 +287,28 @@ func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var count int
-	for _, row := range rows {
+	for _, id := range rows {
 		if ctx.Err() != nil {
 			break
 		}
-		thumb, err := makeThumbnail(row.Content)
+		file, err := s.Queries.GetFile(ctx, id)
+		if err != nil {
+			log.Printf("backfill: get file %d: %v", id, err)
+			continue
+		}
+		thumb, err := makeThumbnail(file.Content)
 		if errors.Is(err, ErrNotSupported) {
 			continue
 		}
 		if err != nil {
-			log.Printf("backfill: thumbnail for file %d: %v", row.ID, err)
+			log.Printf("backfill: thumbnail for file %d: %v", id, err)
 			continue
 		}
 		if err := s.Queries.UpdateFileThumbnail(ctx, model.UpdateFileThumbnailParams{
 			Thumbnail: thumb,
-			ID:        row.ID,
+			ID:        id,
 		}); err != nil {
-			log.Printf("backfill: update file %d: %v", row.ID, err)
+			log.Printf("backfill: update file %d: %v", id, err)
 			continue
 		}
 		count++

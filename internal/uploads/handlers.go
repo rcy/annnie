@@ -1,22 +1,32 @@
 package uploads
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"goirc/bot"
 	"goirc/db/model"
 	"goirc/events"
 	"goirc/web/auth"
+	"image"
+	"image/jpeg"
+	_ "image/gif"
+	_ "image/png"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/image/draw"
 	. "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
+
+var ErrNotSupported = errors.New("not a supported image format")
 
 type service struct {
 	Queries *model.Queries
@@ -41,9 +51,10 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 	imageNodes := make([]Node, 0, len(files))
 	for _, f := range files {
-		src := fmt.Sprintf("/uploads/%d", f.ID)
-		imageNodes = append(imageNodes, A(Href(src), Style("display: block; width: 200px; height: 200px; margin: 4px; overflow: hidden; flex-shrink: 0; background: #eee;"),
-			Img(Src(src), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")),
+		full := fmt.Sprintf("/uploads/%d", f.ID)
+		thumb := fmt.Sprintf("/uploads/%d/thumb", f.ID)
+		imageNodes = append(imageNodes, A(Href(full), Style("display: block; width: 200px; height: 200px; margin: 4px; overflow: hidden; flex-shrink: 0; background: #eee;"),
+			Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")),
 		))
 	}
 
@@ -164,6 +175,17 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	thumb, err := makeThumbnail(data)
+	if err != nil && !errors.Is(err, ErrNotSupported) {
+		log.Printf("makeThumbnail id=%d: %v", file.ID, err)
+	}
+	if thumb != nil {
+		_ = s.Queries.UpdateFileThumbnail(r.Context(), model.UpdateFileThumbnailParams{
+			ID:        file.ID,
+			Thumbnail: thumb,
+		})
+	}
+
 	err = s.Bot.Events.Insert(s.Bot.Channel, events.FileUploaded{Nick: nick, FileID: file.ID})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Events.Insert: %s", err), http.StatusInternalServerError)
@@ -200,6 +222,33 @@ func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(file.Content)
 }
 
+func (s *service) ThumbnailHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+
+	thumb, err := s.Queries.GetFileThumbnail(ctx, int64(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+	if len(thumb) > 0 {
+		w.Header().Set("Content-Type", "image/jpeg")
+		w.Write(thumb)
+		return
+	}
+
+	// No thumbnail yet — fall back to the full image
+	file, err := s.Queries.GetFile(ctx, int64(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(file.Content)
+}
+
 func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
@@ -215,4 +264,43 @@ func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 		Div(A(Text(url), Href(url))),
 		Div(A(Text("upload another"), Href("/uploads"))),
 	).Render(w)
+}
+
+// makeThumbnail decodes an image and returns a JPEG thumbnail scaled to fit within 300x300.
+// Returns ErrNotSupported if the data is not a recognized image format.
+func makeThumbnail(data []byte) ([]byte, error) {
+	src, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, ErrNotSupported
+	}
+
+	const maxDim = 300
+	bounds := src.Bounds()
+	sw, sh := bounds.Dx(), bounds.Dy()
+
+	tw, th := sw, sh
+	if sw > maxDim || sh > maxDim {
+		if sw > sh {
+			tw = maxDim
+			th = sh * maxDim / sw
+		} else {
+			th = maxDim
+			tw = sw * maxDim / sh
+		}
+	}
+	if tw == 0 {
+		tw = 1
+	}
+	if th == 0 {
+		th = 1
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, tw, th))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), draw.Over, nil)
+
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: 80}); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

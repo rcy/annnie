@@ -534,6 +534,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 
 		uploader := uploads.NewUploader(q, db.DB, b)
 		r.Get("/uploads/success/{id}", uploader.SuccessHandler)
+		r.Get("/uploads/{id}/thumb", uploader.ThumbnailHandler)
 		r.Get("/uploads/{id}", uploader.FileHandler)
 		r.Get("/uploads", uploader.GetHandler)
 		r.Post("/uploads", uploader.PostHandler)

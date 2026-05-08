@@ -117,7 +117,13 @@ delete from cache where key = @key;
 insert into files(nick,content) values (@nick, @content) returning *;
 
 -- name: GetFile :one
-select * from files where id = @id;
+select id, created_at, nick, content from files where id = @id;
+
+-- name: GetFileThumbnail :one
+select thumbnail from files where id = @id;
+
+-- name: UpdateFileThumbnail :exec
+update files set thumbnail = @thumbnail where id = @id;
 
 -- name: ListFiles :many
 select id, created_at, nick from files order by created_at desc;

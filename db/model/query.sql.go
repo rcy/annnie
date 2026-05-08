@@ -307,9 +307,16 @@ const getFile = `-- name: GetFile :one
 select id, created_at, nick, content from files where id = ?1
 `
 
-func (q *Queries) GetFile(ctx context.Context, id int64) (File, error) {
+type GetFileRow struct {
+	ID        int64
+	CreatedAt time.Time
+	Nick      string
+	Content   []byte
+}
+
+func (q *Queries) GetFile(ctx context.Context, id int64) (GetFileRow, error) {
 	row := q.db.QueryRowContext(ctx, getFile, id)
-	var i File
+	var i GetFileRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
@@ -317,6 +324,17 @@ func (q *Queries) GetFile(ctx context.Context, id int64) (File, error) {
 		&i.Content,
 	)
 	return i, err
+}
+
+const getFileThumbnail = `-- name: GetFileThumbnail :one
+select thumbnail from files where id = ?1
+`
+
+func (q *Queries) GetFileThumbnail(ctx context.Context, id int64) ([]byte, error) {
+	row := q.db.QueryRowContext(ctx, getFileThumbnail, id)
+	var thumbnail []byte
+	err := row.Scan(&thumbnail)
+	return thumbnail, err
 }
 
 const getNickTimezone = `-- name: GetNickTimezone :one
@@ -331,7 +349,7 @@ func (q *Queries) GetNickTimezone(ctx context.Context, nick string) (NickTimezon
 }
 
 const insertFile = `-- name: InsertFile :one
-insert into files(nick,content) values (?1, ?2) returning id, created_at, nick, content
+insert into files(nick,content) values (?1, ?2) returning id, created_at, nick, content, thumbnail
 `
 
 type InsertFileParams struct {
@@ -347,6 +365,7 @@ func (q *Queries) InsertFile(ctx context.Context, arg InsertFileParams) (File, e
 		&i.CreatedAt,
 		&i.Nick,
 		&i.Content,
+		&i.Thumbnail,
 	)
 	return i, err
 }
@@ -885,6 +904,20 @@ func (q *Queries) UnsentAnonymousNotes(ctx context.Context, arg UnsentAnonymousN
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateFileThumbnail = `-- name: UpdateFileThumbnail :exec
+update files set thumbnail = ?1 where id = ?2
+`
+
+type UpdateFileThumbnailParams struct {
+	Thumbnail []byte
+	ID        int64
+}
+
+func (q *Queries) UpdateFileThumbnail(ctx context.Context, arg UpdateFileThumbnailParams) error {
+	_, err := q.db.ExecContext(ctx, updateFileThumbnail, arg.Thumbnail, arg.ID)
+	return err
 }
 
 const updateNickTimezone = `-- name: UpdateNickTimezone :exec

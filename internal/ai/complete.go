@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goirc/db/model"
+	db "goirc/model"
 	"strings"
 
 	"github.com/openai/openai-go/v3"
@@ -12,11 +14,20 @@ import (
 var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
 var ErrRejected = errors.New("Rejected")
 
+func getModel(ctx context.Context) string {
+	q := model.New(db.DB.DB)
+	cfg, err := q.GetConfig(ctx, "model")
+	if err != nil || cfg.Value == "" {
+		return string(openai.ChatModelGPT5_4Mini)
+	}
+	return cfg.Value
+}
+
 func Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
 	client := openai.NewClient()
 
 	resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model: openai.ChatModelGPT5_4Mini,
+		Model: getModel(ctx),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.SystemMessage(systemPrompt),
 			openai.UserMessage(userPrompt),

@@ -82,6 +82,8 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^tz`, tz.Handle)
 	b.Handle(`^!cnn\b(.+)?`, news.Handle)
 	b.Handle(`^!bsky (.+) (.+)`, bsky.Handle)
+	b.Handle(`^!get (\S+)$`, handlers.GetConfig)
+	b.Handle(`^!set (\S+) (.+)$`, handlers.SetConfig)
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)

@@ -83,3 +83,8 @@ CREATE TABLE nick_timezones(
   nick text not null primary key,
   tz text not null
 );
+CREATE TABLE configs(
+  key text not null primary key,
+  value text not null,
+  nick text not null
+);

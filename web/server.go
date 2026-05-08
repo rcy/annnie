@@ -330,6 +330,22 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			http.ServeFile(w, r, "/tmp/snapshot.db")
 		})
 
+		r.Get("/configs", func(w http.ResponseWriter, r *http.Request) {
+			configs, err := q.ListConfigs(r.Context())
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			Table(
+				THead(Tr(Th(Text("Key")), Th(Text("Value")), Th(Text("Nick")))),
+				TBody(
+					Map(configs, func(c model.Config) Node {
+						return Tr(Td(Text(c.Key)), Td(Text(c.Value)), Td(Text(c.Nick)))
+					}),
+				),
+			).Render(w)
+		})
+
 		r.Get("/events", func(w http.ResponseWriter, r *http.Request) {
 			eventList, err := es.LoadAllEvents(true)
 			if err != nil {

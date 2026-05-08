@@ -226,6 +226,15 @@ func (q *Queries) CreateNickSession(ctx context.Context, arg CreateNickSessionPa
 	return err
 }
 
+const deleteConfig = `-- name: DeleteConfig :exec
+delete from configs where key = ?1
+`
+
+func (q *Queries) DeleteConfig(ctx context.Context, key string) error {
+	_, err := q.db.ExecContext(ctx, deleteConfig, key)
+	return err
+}
+
 const deleteFutureMessage = `-- name: DeleteFutureMessage :exec
 delete from future_messages where id = ?
 `
@@ -301,6 +310,17 @@ func (q *Queries) GeneratedImages(ctx context.Context) ([]GeneratedImage, error)
 		return nil, err
 	}
 	return items, nil
+}
+
+const getConfig = `-- name: GetConfig :one
+select "key", value, nick from configs where key = ?1
+`
+
+func (q *Queries) GetConfig(ctx context.Context, key string) (Config, error) {
+	row := q.db.QueryRowContext(ctx, getConfig, key)
+	var i Config
+	err := row.Scan(&i.Key, &i.Value, &i.Nick)
+	return i, err
 }
 
 const getFile = `-- name: GetFile :one
@@ -544,6 +564,33 @@ func (q *Queries) Link(ctx context.Context, id int64) (Note, error) {
 		&i.Anon,
 	)
 	return i, err
+}
+
+const listConfigs = `-- name: ListConfigs :many
+select "key", value, nick from configs order by key asc
+`
+
+func (q *Queries) ListConfigs(ctx context.Context) ([]Config, error) {
+	rows, err := q.db.QueryContext(ctx, listConfigs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Config
+	for rows.Next() {
+		var i Config
+		if err := rows.Scan(&i.Key, &i.Value, &i.Nick); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listFiles = `-- name: ListFiles :many
@@ -891,6 +938,22 @@ func (q *Queries) ScheduleFutureMessage(ctx context.Context, kind string) (Futur
 	var i FutureMessage
 	err := row.Scan(&i.ID, &i.CreatedAt, &i.Kind)
 	return i, err
+}
+
+const setConfig = `-- name: SetConfig :exec
+insert into configs(key, value, nick) values(?1, ?2, ?3)
+on conflict(key) do update set value = excluded.value, nick = excluded.nick
+`
+
+type SetConfigParams struct {
+	Key   string
+	Value string
+	Nick  string
+}
+
+func (q *Queries) SetConfig(ctx context.Context, arg SetConfigParams) error {
+	_, err := q.db.ExecContext(ctx, setConfig, arg.Key, arg.Value, arg.Nick)
+	return err
 }
 
 const unsentAnonymousNotes = `-- name: UnsentAnonymousNotes :many

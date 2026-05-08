@@ -298,6 +298,17 @@ create table nick_timezones(
 			_, err := tx.Exec(`alter table files add column thumbnail blob`)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add configs")
+			_, err := tx.Exec(`
+create table configs(
+  key text not null primary key,
+  value text not null,
+  nick text not null
+);
+`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

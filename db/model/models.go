@@ -30,6 +30,12 @@ type ChannelNick struct {
 	UpdatedAt time.Time
 }
 
+type Config struct {
+	Key   string
+	Value string
+	Nick  string
+}
+
 type File struct {
 	ID        int64
 	CreatedAt time.Time

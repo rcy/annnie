@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/image/draw"
@@ -264,6 +265,42 @@ func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 		Div(A(Text(url), Href(url))),
 		Div(A(Text("upload another"), Href("/uploads"))),
 	).Render(w)
+}
+
+func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+
+	rows, err := s.Queries.ListFilesNeedingThumbnail(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list files: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var count int
+	for _, row := range rows {
+		if ctx.Err() != nil {
+			break
+		}
+		thumb, err := makeThumbnail(row.Content)
+		if errors.Is(err, ErrNotSupported) {
+			continue
+		}
+		if err != nil {
+			log.Printf("backfill: thumbnail for file %d: %v", row.ID, err)
+			continue
+		}
+		if err := s.Queries.UpdateFileThumbnail(ctx, model.UpdateFileThumbnailParams{
+			Thumbnail: thumb,
+			ID:        row.ID,
+		}); err != nil {
+			log.Printf("backfill: update file %d: %v", row.ID, err)
+			continue
+		}
+		count++
+	}
+
+	fmt.Fprintf(w, "backfill: processed %d images\n", count)
 }
 
 // makeThumbnail decodes an image and returns a JPEG thumbnail scaled to fit within 300x300.

@@ -579,6 +579,38 @@ func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
 	return items, nil
 }
 
+const listFilesNeedingThumbnail = `-- name: ListFilesNeedingThumbnail :many
+select id, content from files where thumbnail is null
+`
+
+type ListFilesNeedingThumbnailRow struct {
+	ID      int64
+	Content []byte
+}
+
+func (q *Queries) ListFilesNeedingThumbnail(ctx context.Context) ([]ListFilesNeedingThumbnailRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFilesNeedingThumbnail)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListFilesNeedingThumbnailRow
+	for rows.Next() {
+		var i ListFilesNeedingThumbnailRow
+		if err := rows.Scan(&i.ID, &i.Content); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markAnonymousNoteDelivered = `-- name: MarkAnonymousNoteDelivered :one
 update notes set target = ?, created_at = current_timestamp where id = ? returning id, created_at, nick, text, kind, target, anon
 `

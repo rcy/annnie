@@ -1,4 +1,4 @@
-FROM golang:1.24-bullseye AS builder
+FROM golang:1.26-bullseye AS builder
 ARG rev=dev
 WORKDIR /work
 COPY go.mod go.sum ./

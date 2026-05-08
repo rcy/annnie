@@ -1,4 +1,5 @@
 export BUILDKIT_PROGRESS=plain
+export CGO_ENABLED=0
 
 watch:
 	. ./.env && . ./.env.local && air

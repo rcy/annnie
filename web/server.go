@@ -540,6 +540,9 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		r.Post("/uploads", uploader.PostHandler)
 	})
 
+	backfiller := uploads.NewUploader(q, db.DB, b)
+	r.Post("/backfill", backfiller.BackfillHandler)
+
 	r.Get("/generated_images/{id}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/i/"+chi.URLParam(r, "id"), http.StatusSeeOther)
 	})

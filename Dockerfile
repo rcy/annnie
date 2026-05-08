@@ -1,4 +1,4 @@
-FROM golang:1.26-bullseye AS builder
+FROM golang:1.26-bookworm AS builder
 ARG rev=dev
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -6,7 +6,7 @@ RUN go mod download
 COPY . .
 RUN go build -ldflags "-X goirc/commit.Rev=$rev" -o app .
 
-FROM debian:bullseye
+FROM debian:bookworm
 RUN apt-get update && apt-get install -y bsdgames ca-certificates curl pup jq ddate
 WORKDIR /work
 COPY --from=builder /work/app .

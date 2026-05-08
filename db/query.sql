@@ -139,3 +139,16 @@ insert into nick_timezones(tz, nick) values(@tz, @nick);
 
 -- name: GetNickTimezone :one
 select * from nick_timezones where nick = @nick;
+
+-- name: ListConfigs :many
+select * from configs order by key asc;
+
+-- name: GetConfig :one
+select * from configs where key = @key;
+
+-- name: SetConfig :exec
+insert into configs(key, value, nick) values(@key, @value, @nick)
+on conflict(key) do update set value = excluded.value, nick = excluded.nick;
+
+-- name: DeleteConfig :exec
+delete from configs where key = @key;

@@ -580,27 +580,22 @@ func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
 }
 
 const listFilesNeedingThumbnail = `-- name: ListFilesNeedingThumbnail :many
-select id, content from files where thumbnail is null
+select id from files where thumbnail is null
 `
 
-type ListFilesNeedingThumbnailRow struct {
-	ID      int64
-	Content []byte
-}
-
-func (q *Queries) ListFilesNeedingThumbnail(ctx context.Context) ([]ListFilesNeedingThumbnailRow, error) {
+func (q *Queries) ListFilesNeedingThumbnail(ctx context.Context) ([]int64, error) {
 	rows, err := q.db.QueryContext(ctx, listFilesNeedingThumbnail)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListFilesNeedingThumbnailRow
+	var items []int64
 	for rows.Next() {
-		var i ListFilesNeedingThumbnailRow
-		if err := rows.Scan(&i.ID, &i.Content); err != nil {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

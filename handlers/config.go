@@ -5,6 +5,7 @@ import (
 	"goirc/db/model"
 	"goirc/internal/responder"
 	db "goirc/model"
+	"strings"
 )
 
 func GetConfig(params responder.Responder) error {
@@ -27,6 +28,16 @@ func SetConfig(params responder.Responder) error {
 
 	q := model.New(db.DB)
 	ctx := context.TODO()
+
+	if strings.HasPrefix(value, "$") {
+		refKey := value[1:]
+		ref, err := q.GetConfig(ctx, refKey)
+		if err != nil {
+			params.Privmsgf(params.Target(), "%s: %s is not set", params.Nick(), refKey)
+			return nil
+		}
+		value = ref.Value
+	}
 
 	prev, err := q.GetConfig(ctx, key)
 

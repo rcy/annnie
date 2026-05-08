@@ -267,6 +267,15 @@ func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 	).Render(w)
 }
 
+func (s *service) BackfillStatusHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.Queries.ListFilesNeedingThumbnail(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list files: %v", err), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "%d images need thumbnails\n", len(rows))
+}
+
 func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 	defer cancel()

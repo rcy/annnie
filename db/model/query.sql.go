@@ -324,7 +324,7 @@ func (q *Queries) GetConfig(ctx context.Context, key string) (Config, error) {
 }
 
 const getFile = `-- name: GetFile :one
-select id, created_at, nick, content from files where id = ?1
+select id, created_at, nick, content, mime from files where id = ?1
 `
 
 type GetFileRow struct {
@@ -332,6 +332,7 @@ type GetFileRow struct {
 	CreatedAt time.Time
 	Nick      string
 	Content   []byte
+	Mime      sql.NullString
 }
 
 func (q *Queries) GetFile(ctx context.Context, id int64) (GetFileRow, error) {
@@ -342,6 +343,7 @@ func (q *Queries) GetFile(ctx context.Context, id int64) (GetFileRow, error) {
 		&i.CreatedAt,
 		&i.Nick,
 		&i.Content,
+		&i.Mime,
 	)
 	return i, err
 }
@@ -369,7 +371,7 @@ func (q *Queries) GetNickTimezone(ctx context.Context, nick string) (NickTimezon
 }
 
 const insertFile = `-- name: InsertFile :one
-insert into files(nick,content) values (?1, ?2) returning id, created_at, nick, content, thumbnail
+insert into files(nick,content) values (?1, ?2) returning id, created_at, nick, content, thumbnail, mime
 `
 
 type InsertFileParams struct {
@@ -386,6 +388,7 @@ func (q *Queries) InsertFile(ctx context.Context, arg InsertFileParams) (File, e
 		&i.Nick,
 		&i.Content,
 		&i.Thumbnail,
+		&i.Mime,
 	)
 	return i, err
 }
@@ -616,6 +619,33 @@ func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFilesNeedingMime = `-- name: ListFilesNeedingMime :many
+select id from files where mime is null
+`
+
+func (q *Queries) ListFilesNeedingMime(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, listFilesNeedingMime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -994,6 +1024,20 @@ func (q *Queries) UnsentAnonymousNotes(ctx context.Context, arg UnsentAnonymousN
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateFileMime = `-- name: UpdateFileMime :exec
+update files set mime = ?1 where id = ?2
+`
+
+type UpdateFileMimeParams struct {
+	Mime sql.NullString
+	ID   int64
+}
+
+func (q *Queries) UpdateFileMime(ctx context.Context, arg UpdateFileMimeParams) error {
+	_, err := q.db.ExecContext(ctx, updateFileMime, arg.Mime, arg.ID)
+	return err
 }
 
 const updateFileThumbnail = `-- name: UpdateFileThumbnail :exec

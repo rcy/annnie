@@ -77,7 +77,8 @@ CREATE TABLE files(
   created_at datetime not null default current_timestamp,
   nick text not null,
   content blob not null,
-  thumbnail blob
+  thumbnail blob,
+  mime text
 );
 CREATE TABLE nick_timezones(
   nick text not null primary key,

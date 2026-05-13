@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/image/draw"
 	. "maragu.dev/gomponents"
@@ -176,6 +177,12 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mtype := mimetype.Detect(data)
+	_ = s.Queries.UpdateFileMime(r.Context(), model.UpdateFileMimeParams{
+		ID:   file.ID,
+		Mime: sql.NullString{String: mtype.String(), Valid: true},
+	})
+
 	thumb, err := makeThumbnail(data)
 	if err != nil && !errors.Is(err, ErrNotSupported) {
 		log.Printf("makeThumbnail id=%d: %v", file.ID, err)
@@ -220,6 +227,9 @@ func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	if file.Mime.Valid {
+		w.Header().Set("Content-Type", file.Mime.String)
+	}
 	w.Write(file.Content)
 }
 
@@ -274,6 +284,40 @@ func (s *service) BackfillStatusHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	fmt.Fprintf(w, "%d images need thumbnails\n", len(rows))
+}
+
+func (s *service) BackfillMimeHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+
+	rows, err := s.Queries.ListFilesNeedingMime(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list files: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var count int
+	for _, id := range rows {
+		if ctx.Err() != nil {
+			break
+		}
+		file, err := s.Queries.GetFile(ctx, id)
+		if err != nil {
+			log.Printf("backfill mime: get file %d: %v", id, err)
+			continue
+		}
+		mtype := mimetype.Detect(file.Content)
+		if err := s.Queries.UpdateFileMime(ctx, model.UpdateFileMimeParams{
+			ID:   id,
+			Mime: sql.NullString{String: mtype.String(), Valid: true},
+		}); err != nil {
+			log.Printf("backfill mime: update file %d: %v", id, err)
+			continue
+		}
+		count++
+	}
+
+	fmt.Fprintf(w, "backfill mime: processed %d files\n", count)
 }
 
 func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {

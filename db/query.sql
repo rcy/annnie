@@ -116,8 +116,11 @@ delete from cache where key = @key;
 -- name: InsertFile :one
 insert into files(nick,content) values (@nick, @content) returning *;
 
+-- name: UpdateFileMime :exec
+update files set mime = @mime where id = @id;
+
 -- name: GetFile :one
-select id, created_at, nick, content from files where id = @id;
+select id, created_at, nick, content, mime from files where id = @id;
 
 -- name: GetFileThumbnail :one
 select thumbnail from files where id = @id;
@@ -130,6 +133,9 @@ select id, created_at, nick from files order by created_at desc;
 
 -- name: ListFilesNeedingThumbnail :many
 select id from files where thumbnail is null;
+
+-- name: ListFilesNeedingMime :many
+select id from files where mime is null;
 
 -- name: UpdateNickTimezone :exec
 update nick_timezones set tz = @tz where nick = @nick;

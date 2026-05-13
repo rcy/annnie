@@ -309,6 +309,11 @@ create table configs(
 `)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add mime to files")
+			_, err := tx.Exec(`alter table files add column mime text`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

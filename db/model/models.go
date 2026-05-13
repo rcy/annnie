@@ -42,6 +42,7 @@ type File struct {
 	Nick      string
 	Content   []byte
 	Thumbnail []byte
+	Mime      sql.NullString
 }
 
 type FutureMessage struct {

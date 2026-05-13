@@ -320,5 +320,15 @@ create table configs(
 	if err != nil {
 		log.Fatalf("MIGRATION: %v", err)
 	}
+
+	for _, pragma := range []string{
+		"PRAGMA journal_mode = WAL",
+		"PRAGMA busy_timeout = 5000",
+	} {
+		if _, err := db.Exec(pragma); err != nil {
+			log.Fatalf("pragma: %v", err)
+		}
+	}
+
 	return sqlx.NewDb(db, "sqlite")
 }

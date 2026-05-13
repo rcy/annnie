@@ -19,6 +19,10 @@ func DeferredDelivery(params responder.Responder) error {
 		return nil
 	}
 
+	if prefix == "annie" {
+		return nil
+	}
+
 	if model.PrefixMatchesKnownNick(model.DB, params.Target(), prefix) {
 		_, err := model.DB.Exec(`insert into laters values(datetime('now'), ?, ?, ?, ?)`, params.Nick(), prefix, message, false)
 		if err != nil {

@@ -597,13 +597,14 @@ func (q *Queries) ListConfigs(ctx context.Context) ([]Config, error) {
 }
 
 const listFiles = `-- name: ListFiles :many
-select id, created_at, nick from files order by created_at desc
+select id, created_at, nick, mime from files order by created_at desc
 `
 
 type ListFilesRow struct {
 	ID        int64
 	CreatedAt time.Time
 	Nick      string
+	Mime      sql.NullString
 }
 
 func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
@@ -615,7 +616,12 @@ func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
 	var items []ListFilesRow
 	for rows.Next() {
 		var i ListFilesRow
-		if err := rows.Scan(&i.ID, &i.CreatedAt, &i.Nick); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Mime,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

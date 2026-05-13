@@ -11,14 +11,16 @@ import (
 	"goirc/events"
 	"goirc/web/auth"
 	"image"
-	"image/jpeg"
 	_ "image/gif"
+	"image/jpeg"
 	_ "image/png"
 	"io"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -51,13 +53,22 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageNodes := make([]Node, 0, len(files))
+	nodes := make([]Node, 0, len(files))
 	for _, f := range files {
 		full := fmt.Sprintf("/uploads/%d", f.ID)
 		thumb := fmt.Sprintf("/uploads/%d/thumb", f.ID)
-		imageNodes = append(imageNodes, A(Href(full), Style("display: block; width: 200px; height: 200px; margin: 4px; overflow: hidden; flex-shrink: 0; background: #eee;"),
-			Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")),
-		))
+		var node Node
+
+		if strings.HasPrefix(f.Mime.String, "audio/") {
+			rng := rand.New(rand.NewPCG(uint64(f.ID), 0))
+			node = A(Href(full), Style(fmt.Sprintf("display: flex; flex-direction: column; justify-content: center; width: 100%%; height: 100%%; background: linear-gradient(%ddeg, hsl(%d,70%%,60%%), hsl(%d,70%%,60%%));", rng.IntN(360), rng.IntN(360), rng.IntN(360))),
+				Audio(Src(full), Controls()),
+			)
+		} else {
+			node = A(Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
+		}
+		node = Div(Style("display: flex; flex-direction: column; justify-content: center; width: 300px; height: 300px; margin: 4px; overflow: hidden; flex-shrink: 0; background: #eee;"), node)
+		nodes = append(nodes, node)
 	}
 
 	HTML(
@@ -75,7 +86,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				),
 			),
 			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
-				Group(imageNodes),
+				Group(nodes),
 			),
 			Script(Raw(`
 const dropzone = document.getElementById('dropzone');

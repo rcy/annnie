@@ -597,7 +597,7 @@ func (q *Queries) ListConfigs(ctx context.Context) ([]Config, error) {
 }
 
 const listFiles = `-- name: ListFiles :many
-select id, created_at, nick, mime from files order by created_at desc
+select id, created_at, nick, mime from files order by created_at desc limit 10
 `
 
 type ListFilesRow struct {

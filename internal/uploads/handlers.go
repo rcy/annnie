@@ -254,21 +254,14 @@ func (s *service) ThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(thumb) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-	if len(thumb) > 0 {
-		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(thumb)
-		return
-	}
-
-	// No thumbnail yet — fall back to the full image
-	file, err := s.Queries.GetFile(ctx, int64(id))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(file.Content)
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(thumb)
 }
 
 func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {

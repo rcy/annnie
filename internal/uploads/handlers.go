@@ -156,7 +156,12 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				bg := "#222"
 				if f.Kind == "quote" {
-					bg = "#3d0f20"
+					var h uint64
+					for i, c := range f.Text {
+						h += uint64(c) * uint64(i+1)
+					}
+					rng := rand.New(rand.NewPCG(h, 0))
+					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
 				}
 				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
 					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),

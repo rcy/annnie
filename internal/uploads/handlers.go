@@ -18,6 +18,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"sort"
@@ -149,9 +150,14 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		} else if f.Mime == "image/svg+xml" {
 			node = A(Img(Src(f.FullURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		} else if f.Kind != "" {
-			node = A(Href(f.FullURL), Style("display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; background: #222; color: #eee; text-decoration: none; font-size: 0.85em; overflow: hidden;"),
-				P(Style("margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical;"), Text(f.Text)),
-			)
+			if ytID := youtubeVideoID(f.Text); ytID != "" {
+				thumbURL := fmt.Sprintf("https://img.youtube.com/vi/%s/hqdefault.jpg", ytID)
+				node = A(Href(f.FullURL), Img(Src(thumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+			} else {
+				node = A(Href(f.FullURL), Style("display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; background: #222; color: #eee; text-decoration: none; font-size: 0.85em; overflow: hidden;"),
+					P(Style("margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical;"), Text(f.Text)),
+				)
+			}
 		} else {
 			node = A(Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		}
@@ -541,4 +547,27 @@ func makeVideoThumbnail(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("ffmpeg: %w: %s", err, output)
 	}
 	return os.ReadFile(out.Name())
+}
+
+// youtubeVideoID extracts the video ID from youtube.com/watch?v=, youtu.be/, and youtube.com/shorts/ URLs.
+func youtubeVideoID(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	host := strings.TrimPrefix(u.Hostname(), "www.")
+	host = strings.TrimPrefix(host, "m.")
+	switch host {
+	case "youtube.com":
+		if id := u.Query().Get("v"); id != "" {
+			return id
+		}
+		parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+		if len(parts) >= 2 && parts[0] == "shorts" {
+			return parts[1]
+		}
+	case "youtu.be":
+		return strings.TrimPrefix(u.Path, "/")
+	}
+	return ""
 }

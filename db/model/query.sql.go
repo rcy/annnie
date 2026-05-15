@@ -597,8 +597,13 @@ func (q *Queries) ListConfigs(ctx context.Context) ([]Config, error) {
 }
 
 const listFiles = `-- name: ListFiles :many
-select id, created_at, nick, mime from files order by id desc limit 10
+select id, created_at, nick, mime from files order by id desc limit ?2 offset ?1
 `
+
+type ListFilesParams struct {
+	Offset int64
+	Limit  int64
+}
 
 type ListFilesRow struct {
 	ID        int64
@@ -607,8 +612,8 @@ type ListFilesRow struct {
 	Mime      sql.NullString
 }
 
-func (q *Queries) ListFiles(ctx context.Context) ([]ListFilesRow, error) {
-	rows, err := q.db.QueryContext(ctx, listFiles)
+func (q *Queries) ListFiles(ctx context.Context, arg ListFilesParams) ([]ListFilesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFiles, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

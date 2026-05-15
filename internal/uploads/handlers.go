@@ -47,7 +47,17 @@ var snarfTimezoneJS = `fetch("/snarf-timezone", {method: "POST", headers: {"X-Ti
 func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 	nick := r.Context().Value(auth.NickKey).(string)
 
-	files, err := s.Queries.ListFiles(r.Context())
+	const defaultPer = 10
+	per, _ := strconv.ParseInt(r.URL.Query().Get("per"), 10, 64)
+	if per <= 0 {
+		per = defaultPer
+	}
+	page, _ := strconv.ParseInt(r.URL.Query().Get("page"), 10, 64)
+	if page < 0 {
+		page = 0
+	}
+
+	files, err := s.Queries.ListFiles(r.Context(), model.ListFilesParams{Limit: per, Offset: page * per})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("ListFiles: %s", err), http.StatusInternalServerError)
 		return
@@ -62,7 +72,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(f.Mime.String, "audio/") {
 			rng := rand.New(rand.NewPCG(uint64(f.ID), 0))
 			node = A(Href(full), Style(fmt.Sprintf("display: flex; flex-direction: column; justify-content: center; width: 100%%; height: 100%%; background: linear-gradient(%ddeg, hsl(%d,70%%,60%%), hsl(%d,70%%,60%%));", rng.IntN(360), rng.IntN(360), rng.IntN(360))),
-				Audio(Src(full), Controls()),
+				Audio(Src(full), Controls(), Preload("none")),
 			)
 		} else {
 			node = A(Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
@@ -85,8 +95,16 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					P(Textf("Links to uploaded files will be sent to %s.  You can also drag and drop or paste a file to upload.", s.Bot.Channel)),
 				),
 			),
+			Div(Style("display: flex; gap: 1em; padding: 8px;"),
+				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
+				If(int64(len(files)) == per, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
+			),
 			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
 				Group(nodes),
+			),
+			Div(Style("display: flex; gap: 1em; padding: 8px;"),
+				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
+				If(int64(len(files)) == per, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
 			),
 			Script(Raw(`
 const dropzone = document.getElementById('dropzone');

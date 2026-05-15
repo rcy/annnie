@@ -569,6 +569,45 @@ func (q *Queries) Link(ctx context.Context, id int64) (Note, error) {
 	return i, err
 }
 
+const listAllFiles = `-- name: ListAllFiles :many
+select id, created_at, nick, mime from files order by created_at desc
+`
+
+type ListAllFilesRow struct {
+	ID        int64
+	CreatedAt time.Time
+	Nick      string
+	Mime      sql.NullString
+}
+
+func (q *Queries) ListAllFiles(ctx context.Context) ([]ListAllFilesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAllFiles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAllFilesRow
+	for rows.Next() {
+		var i ListAllFilesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Mime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listConfigs = `-- name: ListConfigs :many
 select "key", value, nick from configs order by key asc
 `

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -58,31 +59,71 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		page = 0
 	}
 
-	files, err := s.Queries.ListFiles(r.Context(), model.ListFilesParams{Limit: per, Offset: page * per})
+	type mediaItem struct {
+		CreatedAt time.Time
+		FullURL   string
+		ThumbURL  string
+		Mime      string
+	}
+
+	files, err := s.Queries.ListAllFiles(r.Context())
 	if err != nil {
-		http.Error(w, fmt.Sprintf("ListFiles: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("ListAllFiles: %s", err), http.StatusInternalServerError)
+		return
+	}
+	genImages, err := s.Queries.GeneratedImages(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("GeneratedImages: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	nodes := make([]Node, 0, len(files))
+	items := make([]mediaItem, 0, len(files)+len(genImages))
 	for _, f := range files {
-		full := fmt.Sprintf("/uploads/%d", f.ID)
-		thumb := fmt.Sprintf("/uploads/%d/thumb", f.ID)
-		var node Node
+		items = append(items, mediaItem{
+			CreatedAt: f.CreatedAt,
+			FullURL:   fmt.Sprintf("/uploads/%d", f.ID),
+			ThumbURL:  fmt.Sprintf("/uploads/%d/thumb", f.ID),
+			Mime:      f.Mime.String,
+		})
+	}
+	for _, g := range genImages {
+		items = append(items, mediaItem{
+			CreatedAt: g.CreatedAt,
+			FullURL:   fmt.Sprintf("/i/%d", g.ID),
+			ThumbURL:  fmt.Sprintf("/images/%d.png", g.ID),
+			Mime:      "image/png",
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
 
-		if strings.HasPrefix(f.Mime.String, "audio/") {
-			rng := rand.New(rand.NewPCG(uint64(f.ID), 0))
+	start := int(page * per)
+	if start > len(items) {
+		start = len(items)
+	}
+	end := start + int(per)
+	if end > len(items) {
+		end = len(items)
+	}
+	items = items[start:end]
+
+	nodes := make([]Node, 0, len(items))
+	for _, f := range items {
+		var node Node
+		if strings.HasPrefix(f.Mime, "audio/") {
+			rng := rand.New(rand.NewPCG(uint64(f.CreatedAt.UnixNano()), 0))
 			node = Div(Style(fmt.Sprintf("display: flex; flex-direction: column; justify-content: center; width: 100%%; height: 100%%; background: linear-gradient(%ddeg, hsl(%d,70%%,60%%), hsl(%d,70%%,60%%));", rng.IntN(360), rng.IntN(360), rng.IntN(360))),
-				Audio(Src(full), Controls(), Preload("none")),
+				Audio(Src(f.FullURL), Controls(), Preload("none")),
 			)
-		} else if strings.HasPrefix(f.Mime.String, "video/") {
-			node = A(Href(full), Style("display: flex; width: 100%; height: 100%;"),
-				Video(Src(full), Controls(), Preload("none"), Attr("poster", thumb), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()")),
+		} else if strings.HasPrefix(f.Mime, "video/") {
+			node = A(Href(f.FullURL), Style("display: flex; width: 100%; height: 100%;"),
+				Video(Src(f.FullURL), Controls(), Preload("none"), Attr("poster", f.ThumbURL), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()")),
 			)
-		} else if f.Mime.String == "image/svg+xml" {
-			node = A(Img(Src(full), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
+		} else if f.Mime == "image/svg+xml" {
+			node = A(Img(Src(f.FullURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		} else {
-			node = A(Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
+			node = A(Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		}
 		node = Div(Style("display: flex; flex-direction: column; justify-content: center; width: 300px; height: 300px; margin: 4px; overflow: hidden; flex-shrink: 0; background: #eee;"), node)
 		nodes = append(nodes, node)

@@ -131,6 +131,9 @@ update files set thumbnail = @thumbnail where id = @id;
 -- name: ListFiles :many
 select id, created_at, nick, mime from files order by created_at desc limit @limit offset @offset;
 
+-- name: ListAllFiles :many
+select id, created_at, nick, mime from files order by created_at desc;
+
 -- name: ListFilesNeedingThumbnail :many
 select id from files where thumbnail is null;
 

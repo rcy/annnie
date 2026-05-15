@@ -359,10 +359,10 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	var thumb []byte
-	if strings.HasPrefix(mtype.String(), "video/") {
-		thumb, err = makeVideoThumbnail(data)
+	if strings.HasPrefix(mtype.String(), "video/") || mtype.String() == "image/avif" {
+		thumb, err = makeFFmpegThumbnail(data)
 		if err != nil {
-			log.Printf("makeVideoThumbnail id=%d: %v", file.ID, err)
+			log.Printf("makeFFmpegThumbnail id=%d: %v", file.ID, err)
 		}
 	} else {
 		thumb, err = makeThumbnail(data)
@@ -517,8 +517,8 @@ func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		var thumb []byte
-		if strings.HasPrefix(file.Mime.String, "video/") {
-			thumb, err = makeVideoThumbnail(file.Content)
+		if strings.HasPrefix(file.Mime.String, "video/") || file.Mime.String == "image/avif" {
+			thumb, err = makeFFmpegThumbnail(file.Content)
 		} else {
 			thumb, err = makeThumbnail(file.Content)
 			if errors.Is(err, ErrNotSupported) {
@@ -581,7 +581,7 @@ func makeThumbnail(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func makeVideoThumbnail(data []byte) ([]byte, error) {
+func makeFFmpegThumbnail(data []byte) ([]byte, error) {
 	in, err := os.CreateTemp("", "video-*")
 	if err != nil {
 		return nil, err

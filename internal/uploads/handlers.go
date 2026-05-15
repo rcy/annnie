@@ -75,8 +75,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				Audio(Src(full), Controls(), Preload("none")),
 			)
 		} else if strings.HasPrefix(f.Mime.String, "video/") {
-			rng := rand.New(rand.NewPCG(uint64(f.ID), 0))
-			node = A(Href(full), Style(fmt.Sprintf("display: flex; flex-direction: column; justify-content: center; width: 100%%; height: 100%%; background: linear-gradient(%ddeg, hsl(%d,70%%,60%%), hsl(%d,70%%,60%%));", rng.IntN(360), rng.IntN(360), rng.IntN(360))),
+			node = A(Href(full), Style("display: flex; width: 100%; height: 100%;"),
 				Video(Src(full), Controls(), Preload("metadata"), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()"), Attr("onloadedmetadata", "this.currentTime=0.001")),
 			)
 		} else if f.Mime.String == "image/svg+xml" {

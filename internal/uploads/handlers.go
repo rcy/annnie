@@ -600,7 +600,7 @@ func makeFFmpegThumbnail(data []byte) ([]byte, error) {
 	out.Close()
 	defer os.Remove(out.Name())
 
-	cmd := exec.Command("ffmpeg", "-i", in.Name(), "-vframes", "1", "-y", "-loglevel", "error", out.Name())
+	cmd := exec.Command("ffmpeg", "-i", in.Name(), "-vframes", "1", "-vf", "scale=300:300:force_original_aspect_ratio=decrease", "-y", "-loglevel", "error", out.Name())
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("ffmpeg: %w: %s", err, output)
 	}

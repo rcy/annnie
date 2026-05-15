@@ -7,7 +7,7 @@ COPY . .
 RUN go build -ldflags "-X goirc/commit.Rev=$rev" -o app .
 
 FROM debian:bookworm
-RUN apt-get update && apt-get install -y bsdgames ca-certificates curl pup jq ddate
+RUN apt-get update && apt-get install -y bsdgames ca-certificates curl pup jq ddate ffmpeg
 WORKDIR /work
 COPY --from=builder /work/app .
 EXPOSE 8080

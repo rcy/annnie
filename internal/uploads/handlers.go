@@ -19,6 +19,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -76,7 +77,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			)
 		} else if strings.HasPrefix(f.Mime.String, "video/") {
 			node = A(Href(full), Style("display: flex; width: 100%; height: 100%;"),
-				Video(Src(full), Controls(), Preload("metadata"), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()"), Attr("onloadedmetadata", "this.currentTime=0.001")),
+				Video(Src(full), Controls(), Preload("none"), Attr("poster", thumb), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()")),
 			)
 		} else if f.Mime.String == "image/svg+xml" {
 			node = A(Img(Src(full), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
@@ -218,9 +219,17 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 		Mime: sql.NullString{String: mtype.String(), Valid: true},
 	})
 
-	thumb, err := makeThumbnail(data)
-	if err != nil && !errors.Is(err, ErrNotSupported) {
-		log.Printf("makeThumbnail id=%d: %v", file.ID, err)
+	var thumb []byte
+	if strings.HasPrefix(mtype.String(), "video/") {
+		thumb, err = makeVideoThumbnail(data)
+		if err != nil {
+			log.Printf("makeVideoThumbnail id=%d: %v", file.ID, err)
+		}
+	} else {
+		thumb, err = makeThumbnail(data)
+		if err != nil && !errors.Is(err, ErrNotSupported) {
+			log.Printf("makeThumbnail id=%d: %v", file.ID, err)
+		}
 	}
 	if thumb != nil {
 		_ = s.Queries.UpdateFileThumbnail(r.Context(), model.UpdateFileThumbnailParams{
@@ -368,9 +377,14 @@ func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("backfill: get file %d: %v", id, err)
 			continue
 		}
-		thumb, err := makeThumbnail(file.Content)
-		if errors.Is(err, ErrNotSupported) {
-			continue
+		var thumb []byte
+		if strings.HasPrefix(file.Mime.String, "video/") {
+			thumb, err = makeVideoThumbnail(file.Content)
+		} else {
+			thumb, err = makeThumbnail(file.Content)
+			if errors.Is(err, ErrNotSupported) {
+				continue
+			}
 		}
 		if err != nil {
 			log.Printf("backfill: thumbnail for file %d: %v", id, err)
@@ -426,4 +440,30 @@ func makeThumbnail(data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func makeVideoThumbnail(data []byte) ([]byte, error) {
+	in, err := os.CreateTemp("", "video-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(in.Name())
+	if _, err := in.Write(data); err != nil {
+		in.Close()
+		return nil, err
+	}
+	in.Close()
+
+	out, err := os.CreateTemp("", "thumb-*.jpg")
+	if err != nil {
+		return nil, err
+	}
+	out.Close()
+	defer os.Remove(out.Name())
+
+	cmd := exec.Command("ffmpeg", "-i", in.Name(), "-vframes", "1", "-y", "-loglevel", "error", out.Name())
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("ffmpeg: %w: %s", err, output)
+	}
+	return os.ReadFile(out.Name())
 }

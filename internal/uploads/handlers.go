@@ -154,8 +154,12 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				thumbURL := fmt.Sprintf("https://img.youtube.com/vi/%s/hqdefault.jpg", ytID)
 				node = A(Href(f.FullURL), Img(Src(thumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
 			} else {
-				node = A(Href(f.FullURL), Style("display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; background: #222; color: #eee; text-decoration: none; font-size: 0.85em; overflow: hidden;"),
-					P(Style("margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical;"), Text(f.Text)),
+				bg := "#222"
+				if f.Kind == "quote" {
+					bg = "#3d0f20"
+				}
+				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
 				)
 			}
 		} else {
@@ -245,6 +249,15 @@ document.addEventListener('paste', (e) => {
         uploadFile(file);
       }
     }
+  }
+});
+
+document.querySelectorAll('[data-fittext]').forEach(el => {
+  const parent = el.parentElement;
+  let size = 128;
+  el.style.fontSize = size + 'px';
+  while ((el.scrollHeight > parent.clientHeight || el.scrollWidth > parent.clientWidth) && size > 10) {
+    el.style.fontSize = --size + 'px';
   }
 });
 `)),

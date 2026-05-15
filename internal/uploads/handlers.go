@@ -179,21 +179,10 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					P(Textf("Links to uploaded files will be sent to %s.  You can also drag and drop or paste a file to upload.", s.Bot.Channel)),
 				),
 			),
-			Div(Style("display: flex; padding: 8px;"),
-				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
-				Div(Style("margin-left: auto;"),
-					If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
-				),
-			),
 			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
 				Group(nodes),
 			),
-			Div(Style("display: flex; padding: 8px;"),
-				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
-				Div(Style("margin-left: auto;"),
-					If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
-				),
-			),
+			If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Style("display: block; text-align: center; padding: 16px; margin: 16px 8px 48px; background: #333; color: #eee; text-decoration: none; border-radius: 4px;"), Text("older →"))),
 			Script(Raw(`
 const dropzone = document.getElementById('dropzone');
     // Handle drag events

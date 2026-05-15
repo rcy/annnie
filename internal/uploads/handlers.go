@@ -30,7 +30,6 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/image/draw"
-	"golang.org/x/net/html"
 	. "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -134,11 +133,6 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				if item.ThumbURL == "" {
 					item.Text = bp.Text
 				}
-			}
-		}
-		if n.Kind == "link" && item.ThumbURL == "" && !isWikipediaURL(n.Text.String) && !isBskyURL(n.Text.String) && youtubeVideoID(n.Text.String) == "" {
-			if thumb, err := s.ogImage(r.Context(), n.Text.String); err == nil {
-				item.ThumbURL = thumb
 			}
 		}
 		items = append(items, item)
@@ -763,63 +757,6 @@ func bskyExtractPost(pt bskyPostThread) bskyPost {
 		thumb = embed.External.Thumb
 	}
 	return bskyPost{Thumb: thumb, Text: pt.Thread.Post.Record.Text}
-}
-
-// ogImage fetches rawURL and returns the og:image content, using the cache to avoid repeat fetches.
-func (s *service) ogImage(ctx context.Context, rawURL string) (string, error) {
-	cacheKey := "og:" + rawURL
-
-	if row, err := s.Queries.CacheLoad(ctx, cacheKey); err == nil {
-		return row.Value, nil
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; annie-bot/1.0)")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	limited := io.LimitReader(resp.Body, 512*1024)
-	doc, err := html.Parse(limited)
-	if err != nil {
-		return "", err
-	}
-
-	image := ogImageFromNode(doc)
-	// Cache even on empty result so we don't retry on every page load.
-	_, _ = s.Queries.CacheStore(ctx, model.CacheStoreParams{Key: cacheKey, Value: image})
-	return image, nil
-}
-
-func ogImageFromNode(n *html.Node) string {
-	if n.Type == html.ElementNode && n.Data == "meta" {
-		var prop, content string
-		for _, a := range n.Attr {
-			switch a.Key {
-			case "property", "name":
-				prop = a.Val
-			case "content":
-				content = a.Val
-			}
-		}
-		if prop == "og:image" && content != "" {
-			return content
-		}
-	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if result := ogImageFromNode(c); result != "" {
-			return result
-		}
-	}
-	return ""
 }
 
 // youtubeVideoID extracts the video ID from youtube.com/watch?v=, youtu.be/, and youtube.com/shorts/ URLs.

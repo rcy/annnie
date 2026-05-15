@@ -47,7 +47,7 @@ var snarfTimezoneJS = `fetch("/snarf-timezone", {method: "POST", headers: {"X-Ti
 func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 	nick := r.Context().Value(auth.NickKey).(string)
 
-	const defaultPer = 10
+	const defaultPer = 100
 	per, _ := strconv.ParseInt(r.URL.Query().Get("per"), 10, 64)
 	if per <= 0 {
 		per = defaultPer

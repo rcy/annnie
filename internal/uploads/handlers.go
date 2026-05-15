@@ -127,6 +127,14 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+		if n.Kind == "link" && isBskyURL(n.Text.String) {
+			if bp, err := s.bskyPostInfo(r.Context(), n.Text.String); err == nil {
+				item.ThumbURL = bp.Thumb
+				if item.ThumbURL == "" {
+					item.Text = bp.Text
+				}
+			}
+		}
 		items = append(items, item)
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -176,6 +184,13 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 							El("span", Style("font-family: serif; font-size: 22px; font-weight: bold; color: #000; line-height: 1;"), Text("W")),
 						),
 					)
+				} else if isBskyURL(f.Text) {
+					node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
+						Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
+						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(0,133,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+							El("span", Style("font-size: 20px; line-height: 1;"), Text("🦋")),
+						),
+					)
 				} else {
 					node = A(Href(f.FullURL), Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
 				}
@@ -189,9 +204,18 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					rng := rand.New(rand.NewPCG(h, 0))
 					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
 				}
-				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
-					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
-				)
+				if isBskyURL(f.FullURL) {
+					node = A(Href(f.FullURL), Style(fmt.Sprintf("display: block; position: relative; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+						P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
+						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(0,133,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+							El("span", Style("font-size: 20px; line-height: 1;"), Text("🦋")),
+						),
+					)
+				} else {
+					node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+						P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
+					)
+				}
 			}
 		} else {
 			node = A(Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
@@ -636,6 +660,102 @@ func isWikipediaURL(rawURL string) bool {
 		return false
 	}
 	return strings.HasSuffix(u.Hostname(), "wikipedia.org") && strings.HasPrefix(u.Path, "/wiki/")
+}
+
+// isBskyURL returns true for bsky.app/profile/.../post/... URLs.
+func isBskyURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	return u.Hostname() == "bsky.app" && len(parts) == 4 && parts[0] == "profile" && parts[2] == "post"
+}
+
+type bskyPostThread struct {
+	Thread struct {
+		Post struct {
+			Record struct {
+				Text string `json:"text"`
+			} `json:"record"`
+			Embed struct {
+				Images []struct {
+					Thumb string `json:"thumb"`
+				} `json:"images"`
+				External struct {
+					Thumb string `json:"thumb"`
+				} `json:"external"`
+				Media struct {
+					Images []struct {
+						Thumb string `json:"thumb"`
+					} `json:"images"`
+				} `json:"media"`
+			} `json:"embed"`
+		} `json:"post"`
+	} `json:"thread"`
+}
+
+type bskyPost struct {
+	Thumb string
+	Text  string
+}
+
+// bskyPostInfo fetches a Bluesky post's thumbnail and text via the AT Protocol API.
+func (s *service) bskyPostInfo(ctx context.Context, rawURL string) (bskyPost, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return bskyPost{}, err
+	}
+	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	if len(parts) != 4 {
+		return bskyPost{}, fmt.Errorf("unexpected bsky path: %s", u.Path)
+	}
+	handle, rkey := parts[1], parts[3]
+	atURI := fmt.Sprintf("at://%s/app.bsky.feed.post/%s", handle, rkey)
+	apiURL := fmt.Sprintf("https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=%s", url.QueryEscape(atURI))
+
+	if row, err := s.Queries.CacheLoad(ctx, apiURL); err == nil {
+		var pt bskyPostThread
+		if err := json.Unmarshal([]byte(row.Value), &pt); err == nil {
+			return bskyExtractPost(pt), nil
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	if err != nil {
+		return bskyPost{}, err
+	}
+	req.Header.Set("User-Agent", "annie-irc-bot/1.0 (https://github.com/rcy/annie)")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return bskyPost{}, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return bskyPost{}, err
+	}
+
+	var pt bskyPostThread
+	if err := json.Unmarshal(body, &pt); err != nil {
+		return bskyPost{}, err
+	}
+
+	_, _ = s.Queries.CacheStore(ctx, model.CacheStoreParams{Key: apiURL, Value: string(body)})
+	return bskyExtractPost(pt), nil
+}
+
+func bskyExtractPost(pt bskyPostThread) bskyPost {
+	embed := pt.Thread.Post.Embed
+	var thumb string
+	if len(embed.Images) > 0 {
+		thumb = embed.Images[0].Thumb
+	} else if len(embed.Media.Images) > 0 {
+		thumb = embed.Media.Images[0].Thumb
+	} else {
+		thumb = embed.External.Thumb
+	}
+	return bskyPost{Thumb: thumb, Text: pt.Thread.Post.Record.Text}
 }
 
 // youtubeVideoID extracts the video ID from youtube.com/watch?v=, youtu.be/, and youtube.com/shorts/ URLs.

@@ -134,6 +134,9 @@ select id, created_at, nick, mime from files order by created_at desc limit @lim
 -- name: ListAllFiles :many
 select id, created_at, nick, mime from files order by created_at desc;
 
+-- name: ListAllNotes :many
+select id, created_at, nick, text, kind from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc;
+
 -- name: ListFilesNeedingThumbnail :many
 select id from files where thumbnail is null;
 

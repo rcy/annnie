@@ -64,6 +64,8 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		FullURL   string
 		ThumbURL  string
 		Mime      string
+		Text      string
+		Kind      string
 	}
 
 	files, err := s.Queries.ListAllFiles(r.Context())
@@ -77,7 +79,13 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := make([]mediaItem, 0, len(files)+len(genImages))
+	notes, err := s.Queries.ListAllNotes(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("ListAllNotes: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	items := make([]mediaItem, 0, len(files)+len(genImages)+len(notes))
 	for _, f := range files {
 		items = append(items, mediaItem{
 			CreatedAt: f.CreatedAt,
@@ -92,6 +100,22 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			FullURL:   fmt.Sprintf("/i/%d", g.ID),
 			ThumbURL:  fmt.Sprintf("/images/%d.png", g.ID),
 			Mime:      "image/png",
+		})
+	}
+	uploadPrefix := os.Getenv("ROOT_URL") + "/uploads/"
+	for _, n := range notes {
+		if n.Kind == "link" && strings.HasPrefix(n.Text.String, uploadPrefix) {
+			continue
+		}
+		fullURL := fmt.Sprintf("/note/%d", n.ID)
+		if n.Kind == "link" {
+			fullURL = n.Text.String
+		}
+		items = append(items, mediaItem{
+			CreatedAt: n.CreatedAt,
+			FullURL:   fullURL,
+			Kind:      n.Kind,
+			Text:      n.Text.String,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -124,6 +148,10 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			)
 		} else if f.Mime == "image/svg+xml" {
 			node = A(Img(Src(f.FullURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
+		} else if f.Kind != "" {
+			node = A(Href(f.FullURL), Style("display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; background: #222; color: #eee; text-decoration: none; font-size: 0.85em; overflow: hidden;"),
+				P(Style("margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical;"), Text(f.Text)),
+			)
 		} else {
 			node = A(Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		}

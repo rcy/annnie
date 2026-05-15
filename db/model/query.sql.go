@@ -608,6 +608,47 @@ func (q *Queries) ListAllFiles(ctx context.Context) ([]ListAllFilesRow, error) {
 	return items, nil
 }
 
+const listAllNotes = `-- name: ListAllNotes :many
+select id, created_at, nick, text, kind from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc
+`
+
+type ListAllNotesRow struct {
+	ID        int64
+	CreatedAt time.Time
+	Nick      sql.NullString
+	Text      sql.NullString
+	Kind      string
+}
+
+func (q *Queries) ListAllNotes(ctx context.Context) ([]ListAllNotesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAllNotes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAllNotesRow
+	for rows.Next() {
+		var i ListAllNotesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Text,
+			&i.Kind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listConfigs = `-- name: ListConfigs :many
 select "key", value, nick from configs order by key asc
 `

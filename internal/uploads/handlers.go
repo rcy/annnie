@@ -79,6 +79,8 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			node = A(Href(full), Style(fmt.Sprintf("display: flex; flex-direction: column; justify-content: center; width: 100%%; height: 100%%; background: linear-gradient(%ddeg, hsl(%d,70%%,60%%), hsl(%d,70%%,60%%));", rng.IntN(360), rng.IntN(360), rng.IntN(360))),
 				Video(Src(full), Controls(), Preload("none"), Style("width: 100%; height: 100%; object-fit: contain;"), Attr("onclick", "event.stopPropagation()")),
 			)
+		} else if f.Mime.String == "image/svg+xml" {
+			node = A(Img(Src(full), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
 		} else {
 			node = A(Img(Src(thumb), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(full))
 		}

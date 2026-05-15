@@ -597,7 +597,7 @@ func (q *Queries) ListConfigs(ctx context.Context) ([]Config, error) {
 }
 
 const listFiles = `-- name: ListFiles :many
-select id, created_at, nick, mime from files order by id desc limit ?2 offset ?1
+select id, created_at, nick, mime from files order by created_at desc limit ?2 offset ?1
 `
 
 type ListFilesParams struct {

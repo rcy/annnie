@@ -314,6 +314,11 @@ create table configs(
 			_, err := tx.Exec(`alter table files add column mime text`)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add covering index for files listing")
+			_, err := tx.Exec(`create index idx_files_listing on files(created_at desc, id, nick, mime)`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

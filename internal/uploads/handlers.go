@@ -152,7 +152,12 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		} else if f.Kind != "" {
 			if ytID := youtubeVideoID(f.Text); ytID != "" {
 				thumbURL := fmt.Sprintf("https://img.youtube.com/vi/%s/hqdefault.jpg", ytID)
-				node = A(Href(f.FullURL), Img(Src(thumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+				node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
+					Img(Src(thumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
+					Div(Style("position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 64px; height: 44px; background: rgba(255,0,0,0.9); border-radius: 10px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+						Div(Style("width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 22px solid white; margin-left: 5px;")),
+					),
+				)
 			} else {
 				bg := "#222"
 				if f.Kind == "quote" {

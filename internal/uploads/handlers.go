@@ -98,14 +98,16 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		return items[i].CreatedAt.After(items[j].CreatedAt)
 	})
 
+	total := len(items)
 	start := int(page * per)
-	if start > len(items) {
-		start = len(items)
+	if start > total {
+		start = total
 	}
 	end := start + int(per)
-	if end > len(items) {
-		end = len(items)
+	if end > total {
+		end = total
 	}
+	hasMore := end < total
 	items = items[start:end]
 
 	nodes := make([]Node, 0, len(items))
@@ -143,16 +145,20 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					P(Textf("Links to uploaded files will be sent to %s.  You can also drag and drop or paste a file to upload.", s.Bot.Channel)),
 				),
 			),
-			Div(Style("display: flex; gap: 1em; padding: 8px;"),
+			Div(Style("display: flex; padding: 8px;"),
 				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
-				If(int64(len(files)) == per, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
+				Div(Style("margin-left: auto;"),
+					If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
+				),
 			),
 			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
 				Group(nodes),
 			),
-			Div(Style("display: flex; gap: 1em; padding: 8px;"),
+			Div(Style("display: flex; padding: 8px;"),
 				If(page > 0, A(Href(fmt.Sprintf("?page=%d&per=%d", page-1, per)), Text("← newer"))),
-				If(int64(len(files)) == per, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
+				Div(Style("margin-left: auto;"),
+					If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Text("older →"))),
+				),
 			),
 			Script(Raw(`
 const dropzone = document.getElementById('dropzone');

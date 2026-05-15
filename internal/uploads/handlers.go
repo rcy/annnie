@@ -244,29 +244,27 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			),
 			If(hasMore, A(Href(fmt.Sprintf("?page=%d&per=%d", page+1, per)), Style("display: block; text-align: center; padding: 16px; margin: 16px 8px 48px; background: #333; color: #eee; text-decoration: none; border-radius: 4px;"), Text("older →"))),
 			Script(Raw(`
-const dropzone = document.getElementById('dropzone');
-    // Handle drag events
-    ['dragenter', 'dragover'].forEach(event => {
-      dropzone.addEventListener(event, e => {
-        e.preventDefault();
-        dropzone.classList.add('hover');
-      });
-    });
+const overlay = document.createElement('div');
+overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;font-size:2em;color:#fff;pointer-events:none;';
+overlay.textContent = 'drop the slop';
+document.body.appendChild(overlay);
 
-    ['dragleave', 'drop'].forEach(event => {
-      dropzone.addEventListener(event, e => {
-        e.preventDefault();
-        dropzone.classList.remove('hover');
-      });
-    });
-
-    // Handle drop
-    dropzone.addEventListener('drop', e => {
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        uploadFile(files[0]);
-      }
-    });
+let dragCount = 0;
+document.addEventListener('dragenter', e => {
+  e.preventDefault();
+  if (++dragCount === 1) overlay.style.display = 'flex';
+});
+document.addEventListener('dragleave', e => {
+  if (--dragCount === 0) overlay.style.display = 'none';
+});
+document.addEventListener('dragover', e => { e.preventDefault(); });
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCount = 0;
+  overlay.style.display = 'none';
+  const files = e.dataTransfer.files;
+  if (files.length > 0) uploadFile(files[0]);
+});
 
  // Upload file using fetch
     function uploadFile(file) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"goirc/bot"
@@ -14,7 +15,6 @@ import (
 	_ "image/gif"
 	"image/jpeg"
 	_ "image/png"
-	"encoding/json"
 	"io"
 	"log"
 	"math/rand/v2"
@@ -169,7 +169,16 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					),
 				)
 			} else if f.ThumbURL != "" {
-				node = A(Href(f.FullURL), Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+				if isWikipediaURL(f.Text) {
+					node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
+						Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
+						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(255,255,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+							El("span", Style("font-family: serif; font-size: 22px; font-weight: bold; color: #000; line-height: 1;"), Text("W")),
+						),
+					)
+				} else {
+					node = A(Href(f.FullURL), Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+				}
 			} else {
 				bg := "#222"
 				if f.Kind == "quote" {
@@ -596,7 +605,12 @@ func (s *service) wikipediaSummary(ctx context.Context, rawURL string) (wikiSumm
 		}
 	}
 
-	resp, err := http.Get(apiURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	if err != nil {
+		return wikiSummary{}, err
+	}
+	req.Header.Set("User-Agent", "annie-irc-bot/1.0 (https://github.com/rcy/annie)")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return wikiSummary{}, err
 	}

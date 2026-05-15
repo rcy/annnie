@@ -18,6 +18,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"sort"
@@ -157,7 +158,16 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			node = A(Img(Src(f.FullURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		} else if f.Kind != "" {
 			if f.OgImage != "" {
-				node = A(Href(f.FullURL), Img(Src(f.OgImage), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+				faviconURL := ""
+				if u, err := url.Parse(f.FullURL); err == nil && u.Host != "" {
+					faviconURL = "https://www.google.com/s2/favicons?domain=" + u.Hostname() + "&sz=32"
+				}
+				node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
+					Img(Src(f.OgImage), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
+					If(faviconURL != "", Div(Style("position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.85); border-radius: 6px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+						Img(Src(faviconURL), Style("width: 20px; height: 20px;")),
+					)),
+				)
 			} else {
 				displayText := f.OgDescription
 				if displayText == "" {
@@ -175,8 +185,15 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					rng := rand.New(rand.NewPCG(h, 0))
 					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
 				}
-				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+				faviconURL := ""
+				if u, err := url.Parse(f.FullURL); err == nil && u.Host != "" {
+					faviconURL = "https://www.google.com/s2/favicons?domain=" + u.Hostname() + "&sz=32"
+				}
+				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; position: relative; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
 					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(displayText)),
+					If(faviconURL != "", Div(Style("position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.85); border-radius: 6px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+						Img(Src(faviconURL), Style("width: 20px; height: 20px;")),
+					)),
 				)
 			}
 		} else {

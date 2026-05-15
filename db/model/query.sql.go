@@ -12,7 +12,7 @@ import (
 )
 
 const allNickNotes = `-- name: AllNickNotes :many
-select id, created_at, nick, text, kind, target, anon from notes where target != nick and nick = ? order by created_at desc limit 10000
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where target != nick and nick = ? order by created_at desc limit 10000
 `
 
 func (q *Queries) AllNickNotes(ctx context.Context, nick sql.NullString) ([]Note, error) {
@@ -32,6 +32,9 @@ func (q *Queries) AllNickNotes(ctx context.Context, nick sql.NullString) ([]Note
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -47,7 +50,7 @@ func (q *Queries) AllNickNotes(ctx context.Context, nick sql.NullString) ([]Note
 }
 
 const allNotes = `-- name: AllNotes :many
-select id, created_at, nick, text, kind, target, anon from notes where target != nick order by created_at desc limit 10000
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where target != nick order by created_at desc limit 10000
 `
 
 func (q *Queries) AllNotes(ctx context.Context) ([]Note, error) {
@@ -67,6 +70,9 @@ func (q *Queries) AllNotes(ctx context.Context) ([]Note, error) {
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -150,7 +156,7 @@ func (q *Queries) ChannelNick(ctx context.Context, arg ChannelNickParams) (Chann
 }
 
 const channelNotesSince = `-- name: ChannelNotesSince :many
-select id, created_at, nick, text, kind, target, anon from notes where target = ? and created_at > ? order by created_at asc limit 69
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where target = ? and created_at > ? order by created_at asc limit 69
 `
 
 type ChannelNotesSinceParams struct {
@@ -175,6 +181,9 @@ func (q *Queries) ChannelNotesSince(ctx context.Context, arg ChannelNotesSincePa
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -429,15 +438,18 @@ func (q *Queries) InsertNickWeatherRequest(ctx context.Context, arg InsertNickWe
 }
 
 const insertNote = `-- name: InsertNote :one
-insert into notes(target, nick, kind, text, anon) values(?,?,?,?,?) returning id, created_at, nick, text, kind, target, anon
+insert into notes(target, nick, kind, text, anon, og_title, og_description, og_image) values(?,?,?,?,?,?,?,?) returning id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image
 `
 
 type InsertNoteParams struct {
-	Target string
-	Nick   sql.NullString
-	Kind   string
-	Text   sql.NullString
-	Anon   bool
+	Target        string
+	Nick          sql.NullString
+	Kind          string
+	Text          sql.NullString
+	Anon          bool
+	OgTitle       sql.NullString
+	OgDescription sql.NullString
+	OgImage       sql.NullString
 }
 
 func (q *Queries) InsertNote(ctx context.Context, arg InsertNoteParams) (Note, error) {
@@ -447,6 +459,9 @@ func (q *Queries) InsertNote(ctx context.Context, arg InsertNoteParams) (Note, e
 		arg.Kind,
 		arg.Text,
 		arg.Anon,
+		arg.OgTitle,
+		arg.OgDescription,
+		arg.OgImage,
 	)
 	var i Note
 	err := row.Scan(
@@ -457,6 +472,9 @@ func (q *Queries) InsertNote(ctx context.Context, arg InsertNoteParams) (Note, e
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
@@ -551,7 +569,7 @@ func (q *Queries) LastWeatherRequestByPrefix(ctx context.Context, dollar_1 sql.N
 }
 
 const link = `-- name: Link :one
-select id, created_at, nick, text, kind, target, anon from notes where id = ? and kind = 'link'
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where id = ? and kind = 'link'
 `
 
 func (q *Queries) Link(ctx context.Context, id int64) (Note, error) {
@@ -565,6 +583,9 @@ func (q *Queries) Link(ctx context.Context, id int64) (Note, error) {
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
@@ -609,15 +630,18 @@ func (q *Queries) ListAllFiles(ctx context.Context) ([]ListAllFilesRow, error) {
 }
 
 const listAllNotes = `-- name: ListAllNotes :many
-select id, created_at, nick, text, kind from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc
+select id, created_at, nick, text, kind, og_title, og_description, og_image from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc
 `
 
 type ListAllNotesRow struct {
-	ID        int64
-	CreatedAt time.Time
-	Nick      sql.NullString
-	Text      sql.NullString
-	Kind      string
+	ID            int64
+	CreatedAt     time.Time
+	Nick          sql.NullString
+	Text          sql.NullString
+	Kind          string
+	OgTitle       sql.NullString
+	OgDescription sql.NullString
+	OgImage       sql.NullString
 }
 
 func (q *Queries) ListAllNotes(ctx context.Context) ([]ListAllNotesRow, error) {
@@ -635,6 +659,9 @@ func (q *Queries) ListAllNotes(ctx context.Context) ([]ListAllNotesRow, error) {
 			&i.Nick,
 			&i.Text,
 			&i.Kind,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -775,7 +802,7 @@ func (q *Queries) ListFilesNeedingThumbnail(ctx context.Context) ([]int64, error
 }
 
 const markAnonymousNoteDelivered = `-- name: MarkAnonymousNoteDelivered :one
-update notes set target = ?, created_at = current_timestamp where id = ? returning id, created_at, nick, text, kind, target, anon
+update notes set target = ?, created_at = current_timestamp where id = ? returning id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image
 `
 
 type MarkAnonymousNoteDeliveredParams struct {
@@ -794,6 +821,9 @@ func (q *Queries) MarkAnonymousNoteDelivered(ctx context.Context, arg MarkAnonym
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
@@ -847,7 +877,7 @@ func (q *Queries) NicksWithNoteCount(ctx context.Context) ([]NicksWithNoteCountR
 }
 
 const nonAnonNotes = `-- name: NonAnonNotes :many
-select id, created_at, nick, text, kind, target, anon from notes where kind='note' and nick != target order by created_at desc
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where kind='note' and nick != target order by created_at desc
 `
 
 func (q *Queries) NonAnonNotes(ctx context.Context) ([]Note, error) {
@@ -867,6 +897,9 @@ func (q *Queries) NonAnonNotes(ctx context.Context) ([]Note, error) {
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -882,7 +915,7 @@ func (q *Queries) NonAnonNotes(ctx context.Context) ([]Note, error) {
 }
 
 const noteByID = `-- name: NoteByID :one
-select id, created_at, nick, text, kind, target, anon from notes where id = ?
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where id = ?
 `
 
 func (q *Queries) NoteByID(ctx context.Context, id int64) (Note, error) {
@@ -896,12 +929,15 @@ func (q *Queries) NoteByID(ctx context.Context, id int64) (Note, error) {
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
 
 const notes = `-- name: Notes :many
-select id, created_at, nick, text, kind, target, anon from notes where kind='note' order by created_at desc
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where kind='note' order by created_at desc
 `
 
 func (q *Queries) Notes(ctx context.Context) ([]Note, error) {
@@ -921,6 +957,9 @@ func (q *Queries) Notes(ctx context.Context) ([]Note, error) {
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -936,7 +975,7 @@ func (q *Queries) Notes(ctx context.Context) ([]Note, error) {
 }
 
 const notesAndQuotes = `-- name: NotesAndQuotes :many
-select id, created_at, nick, text, kind, target, anon from notes where kind='note' or kind='quote' order by created_at desc
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where kind='note' or kind='quote' order by created_at desc
 `
 
 func (q *Queries) NotesAndQuotes(ctx context.Context) ([]Note, error) {
@@ -956,6 +995,9 @@ func (q *Queries) NotesAndQuotes(ctx context.Context) ([]Note, error) {
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -971,7 +1013,7 @@ func (q *Queries) NotesAndQuotes(ctx context.Context) ([]Note, error) {
 }
 
 const notesBetween = `-- name: NotesBetween :many
-select id, created_at, nick, text, kind, target, anon
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image
 from notes
 where
   created_at >= ?1 and created_at < ?2
@@ -1000,6 +1042,9 @@ func (q *Queries) NotesBetween(ctx context.Context, arg NotesBetweenParams) ([]N
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -1015,7 +1060,7 @@ func (q *Queries) NotesBetween(ctx context.Context, arg NotesBetweenParams) ([]N
 }
 
 const randomHistoricalTodayNote = `-- name: RandomHistoricalTodayNote :one
-select id, created_at, nick, text, kind, target, anon from notes
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes
 where
   strftime('%m-%d', created_at) = strftime('%m-%d', 'now')
 and
@@ -1035,6 +1080,9 @@ func (q *Queries) RandomHistoricalTodayNote(ctx context.Context) (Note, error) {
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
@@ -1078,7 +1126,7 @@ func (q *Queries) SetConfig(ctx context.Context, arg SetConfigParams) error {
 }
 
 const unsentAnonymousNotes = `-- name: UnsentAnonymousNotes :many
-select id, created_at, nick, text, kind, target, anon from notes where created_at <= ? and kind = ? and nick = target order by id asc limit 420
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where created_at <= ? and kind = ? and nick = target order by id asc limit 420
 `
 
 type UnsentAnonymousNotesParams struct {
@@ -1103,6 +1151,9 @@ func (q *Queries) UnsentAnonymousNotes(ctx context.Context, arg UnsentAnonymousN
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}
@@ -1160,7 +1211,7 @@ func (q *Queries) UpdateNickTimezone(ctx context.Context, arg UpdateNickTimezone
 }
 
 const updateNoteTextByID = `-- name: UpdateNoteTextByID :one
-update notes set text = ? where id = ? returning id, created_at, nick, text, kind, target, anon
+update notes set text = ? where id = ? returning id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image
 `
 
 type UpdateNoteTextByIDParams struct {
@@ -1179,12 +1230,15 @@ func (q *Queries) UpdateNoteTextByID(ctx context.Context, arg UpdateNoteTextByID
 		&i.Kind,
 		&i.Target,
 		&i.Anon,
+		&i.OgTitle,
+		&i.OgDescription,
+		&i.OgImage,
 	)
 	return i, err
 }
 
 const youtubeLinks = `-- name: YoutubeLinks :many
-select id, created_at, nick, text, kind, target, anon from notes where kind = 'link' and text like '%youtube.com%' or text like '%youtu.be%'
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where kind = 'link' and text like '%youtube.com%' or text like '%youtu.be%'
 `
 
 func (q *Queries) YoutubeLinks(ctx context.Context) ([]Note, error) {
@@ -1204,6 +1258,9 @@ func (q *Queries) YoutubeLinks(ctx context.Context) ([]Note, error) {
 			&i.Kind,
 			&i.Target,
 			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
 		); err != nil {
 			return nil, err
 		}

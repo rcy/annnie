@@ -14,7 +14,7 @@ select * from nick_weather_requests where nick = ? order by created_at desc limi
 select * from nick_weather_requests where city like ? || '%' order by created_at desc limit 1;
 
 -- name: InsertNote :one
-insert into notes(target, nick, kind, text, anon) values(?,?,?,?,?) returning *;
+insert into notes(target, nick, kind, text, anon, og_title, og_description, og_image) values(?,?,?,?,?,?,?,?) returning *;
 
 -- name: LastDaysNotes :many
 select created_at, nick, text, kind from notes where created_at > datetime('now', '-1 day') order by created_at asc;
@@ -135,7 +135,7 @@ select id, created_at, nick, mime from files order by created_at desc limit @lim
 select id, created_at, nick, mime from files order by created_at desc;
 
 -- name: ListAllNotes :many
-select id, created_at, nick, text, kind from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc;
+select id, created_at, nick, text, kind, og_title, og_description, og_image from notes where kind in ('link', 'note', 'quote') and not (anon = 1 and nick = target) order by created_at desc;
 
 -- name: ListFilesNeedingThumbnail :many
 select id from files where thumbnail is null;

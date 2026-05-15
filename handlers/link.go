@@ -16,12 +16,17 @@ func Link(params responder.Responder) error {
 	// posted in a private message?
 	isAnonymous := params.Target() == params.Nick()
 
+	og := fetchOG(context.TODO(), url)
+
 	_, err := q.InsertNote(context.TODO(), model.InsertNoteParams{
-		Target: params.Target(),
-		Nick:   sql.NullString{String: params.Nick(), Valid: true},
-		Kind:   "link",
-		Text:   sql.NullString{String: url, Valid: true},
-		Anon:   isAnonymous,
+		Target:        params.Target(),
+		Nick:          sql.NullString{String: params.Nick(), Valid: true},
+		Kind:          "link",
+		Text:          sql.NullString{String: url, Valid: true},
+		Anon:          isAnonymous,
+		OgTitle:       og.Title,
+		OgDescription: og.Description,
+		OgImage:       og.Image,
 	})
 	if err != nil {
 		return err

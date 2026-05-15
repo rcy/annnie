@@ -319,6 +319,15 @@ create table configs(
 			_, err := tx.Exec(`create index idx_files_listing on files(created_at desc, id, nick, mime)`)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add og columns to notes")
+			_, err := tx.Exec(`
+alter table notes add column og_title text;
+alter table notes add column og_description text;
+alter table notes add column og_image text;
+`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

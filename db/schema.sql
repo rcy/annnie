@@ -8,7 +8,8 @@ CREATE TABLE notes(
   created_at datetime not null default current_timestamp,
   nick text,
   text text,
-  kind text not null default 'note', target text not null default '', anon bool not null default false);
+  kind text not null default 'note', target text not null default '', anon bool not null default false,
+  og_title text, og_description text, og_image text);
 CREATE TABLE reminders(
   id integer not null primary key,
   created_at datetime not null default current_timestamp,

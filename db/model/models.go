@@ -99,13 +99,16 @@ type NickWeatherRequest struct {
 }
 
 type Note struct {
-	ID        int64
-	CreatedAt time.Time
-	Nick      sql.NullString
-	Text      sql.NullString
-	Kind      string
-	Target    string
-	Anon      bool
+	ID            int64
+	CreatedAt     time.Time
+	Nick          sql.NullString
+	Text          sql.NullString
+	Kind          string
+	Target        string
+	Anon          bool
+	OgTitle       sql.NullString
+	OgDescription sql.NullString
+	OgImage       sql.NullString
 }
 
 type Reminder struct {

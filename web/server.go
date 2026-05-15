@@ -552,6 +552,9 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		r.Get("/uploads/success/{id}", uploader.SuccessHandler)
 		r.Get("/uploads/{id}/thumb", uploader.ThumbnailHandler)
 		r.Get("/uploads/{id}", uploader.FileHandler)
+		r.Get("/uploads", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		})
 		r.Get("/", uploader.GetHandler)
 		r.Post("/uploads", uploader.PostHandler)
 	})

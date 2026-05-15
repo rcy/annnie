@@ -68,6 +68,12 @@ select * from notes where id = ?;
 -- name: UpdateNoteTextByID :one
 update notes set text = ? where id = ? returning *;
 
+-- name: ListLinkNotesNeedingOG :many
+select id, text from notes where kind = 'link' and og_title is null and og_description is null and og_image is null order by id desc;
+
+-- name: UpdateNoteOG :exec
+update notes set og_title = @og_title, og_description = @og_description, og_image = @og_image where id = @id;
+
 -- name: DeleteNoteByID :exec
 delete from notes where id = ?;
 

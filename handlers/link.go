@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"goirc/db/model"
+	"goirc/internal/og"
 	"goirc/internal/responder"
 	db "goirc/model"
 )
@@ -16,9 +17,12 @@ func Link(params responder.Responder) error {
 	// posted in a private message?
 	isAnonymous := params.Target() == params.Nick()
 
-	og := fetchOG(context.TODO(), url)
+	og, err := og.Fetch(context.TODO(), url)
+	if err != nil {
+		return err
+	}
 
-	_, err := q.InsertNote(context.TODO(), model.InsertNoteParams{
+	_, err = q.InsertNote(context.TODO(), model.InsertNoteParams{
 		Target:        params.Target(),
 		Nick:          sql.NullString{String: params.Nick(), Valid: true},
 		Kind:          "link",

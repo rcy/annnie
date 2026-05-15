@@ -801,6 +801,38 @@ func (q *Queries) ListFilesNeedingThumbnail(ctx context.Context) ([]int64, error
 	return items, nil
 }
 
+const listLinkNotesNeedingOG = `-- name: ListLinkNotesNeedingOG :many
+select id, text from notes where kind = 'link' and og_title is null and og_description is null and og_image is null order by id desc
+`
+
+type ListLinkNotesNeedingOGRow struct {
+	ID   int64
+	Text sql.NullString
+}
+
+func (q *Queries) ListLinkNotesNeedingOG(ctx context.Context) ([]ListLinkNotesNeedingOGRow, error) {
+	rows, err := q.db.QueryContext(ctx, listLinkNotesNeedingOG)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListLinkNotesNeedingOGRow
+	for rows.Next() {
+		var i ListLinkNotesNeedingOGRow
+		if err := rows.Scan(&i.ID, &i.Text); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markAnonymousNoteDelivered = `-- name: MarkAnonymousNoteDelivered :one
 update notes set target = ?, created_at = current_timestamp where id = ? returning id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image
 `
@@ -1207,6 +1239,27 @@ type UpdateNickTimezoneParams struct {
 
 func (q *Queries) UpdateNickTimezone(ctx context.Context, arg UpdateNickTimezoneParams) error {
 	_, err := q.db.ExecContext(ctx, updateNickTimezone, arg.Tz, arg.Nick)
+	return err
+}
+
+const updateNoteOG = `-- name: UpdateNoteOG :exec
+update notes set og_title = ?1, og_description = ?2, og_image = ?3 where id = ?4
+`
+
+type UpdateNoteOGParams struct {
+	OgTitle       sql.NullString
+	OgDescription sql.NullString
+	OgImage       sql.NullString
+	ID            int64
+}
+
+func (q *Queries) UpdateNoteOG(ctx context.Context, arg UpdateNoteOGParams) error {
+	_, err := q.db.ExecContext(ctx, updateNoteOG,
+		arg.OgTitle,
+		arg.OgDescription,
+		arg.OgImage,
+		arg.ID,
+	)
 	return err
 }
 

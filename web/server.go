@@ -563,6 +563,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 	r.Get("/backfill", backfiller.BackfillStatusHandler)
 	r.Post("/backfill", backfiller.BackfillHandler)
 	r.Post("/backfill-mime", backfiller.BackfillMimeHandler)
+	r.Post("/backfill-og", backfiller.BackfillOGHandler)
 
 	r.Get("/generated_images/{id}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/i/"+chi.URLParam(r, "id"), http.StatusSeeOther)

@@ -9,6 +9,7 @@ import (
 	"goirc/bot"
 	"goirc/db/model"
 	"goirc/events"
+	"goirc/internal/og"
 	"goirc/web/auth"
 	"image"
 	_ "image/gif"
@@ -519,6 +520,45 @@ func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "backfill: processed %d images\n", count)
 }
 
+func (s *service) BackfillOGHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
+	defer cancel()
+
+	rows, err := s.Queries.ListLinkNotesNeedingOG(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list notes: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var count int
+	for _, row := range rows {
+		fmt.Println("DEBUGX shL5 6", row.ID, row.Text.String)
+
+		if ctx.Err() != nil {
+			break
+		}
+		data, err := og.Fetch(ctx, row.Text.String)
+		fmt.Println("DEBUGX 2Yeh 7", data, err)
+
+		if err != nil {
+			data.Title = sql.NullString{String: "error", Valid: true}
+			data.Description = sql.NullString{String: err.Error(), Valid: true}
+		}
+		if err := s.Queries.UpdateNoteOG(ctx, model.UpdateNoteOGParams{
+			ID:            row.ID,
+			OgTitle:       data.Title,
+			OgDescription: data.Description,
+			OgImage:       data.Image,
+		}); err != nil {
+			http.Error(w, fmt.Sprintf("backfill og: update note %d: %v", row.ID, err), http.StatusInternalServerError)
+			return
+		}
+		count++
+	}
+
+	fmt.Fprintf(w, "backfill og: processed %d notes\n", count)
+}
+
 // makeThumbnail decodes an image and returns a JPEG thumbnail scaled to fit within 300x300.
 // Returns ErrNotSupported if the data is not a recognized image format.
 func makeThumbnail(data []byte) ([]byte, error) {
@@ -583,4 +623,3 @@ func makeFFmpegThumbnail(data []byte) ([]byte, error) {
 	}
 	return os.ReadFile(out.Name())
 }
-

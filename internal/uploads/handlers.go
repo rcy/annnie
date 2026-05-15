@@ -174,32 +174,30 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		} else if f.Mime == "image/svg+xml" {
 			node = A(Img(Src(f.FullURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))
 		} else if f.Kind != "" {
+			var faviconBadge Node
+			if f.Kind == "link" {
+				if u, err := url.Parse(f.FullURL); err == nil {
+					faviconURL := fmt.Sprintf("https://www.google.com/s2/favicons?domain=%s&sz=64", u.Hostname())
+					faviconBadge = Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(255,255,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
+						Img(Src(faviconURL), Style("width: 24px; height: 24px;")),
+					)
+				}
+			}
 			if ytID := youtubeVideoID(f.Text); ytID != "" {
 				thumbURL := fmt.Sprintf("https://img.youtube.com/vi/%s/hqdefault.jpg", ytID)
 				node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
 					Img(Src(thumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
-					Div(Style("position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 64px; height: 44px; background: rgba(255,0,0,0.9); border-radius: 10px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
-						Div(Style("width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 22px solid white; margin-left: 5px;")),
-					),
+					faviconBadge,
 				)
 			} else if f.ThumbURL != "" {
-				if isWikipediaURL(f.Text) {
-					node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
-						Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
-						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(255,255,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
-							El("span", Style("font-family: serif; font-size: 22px; font-weight: bold; color: #000; line-height: 1;"), Text("W")),
-						),
-					)
-				} else if isBskyURL(f.Text) {
-					node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
-						Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
-						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(0,133,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
-							El("span", Style("font-size: 20px; line-height: 1;"), Text("🦋")),
-						),
-					)
-				} else {
-					node = A(Href(f.FullURL), Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
+				fit := "contain"
+				if isWikipediaURL(f.FullURL) || isBskyURL(f.FullURL) {
+					fit = "cover"
 				}
+				node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
+					Img(Src(f.ThumbURL), Loading("lazy"), Style(fmt.Sprintf("width: 100%%; height: 100%%; object-fit: %s;", fit))),
+					faviconBadge,
+				)
 			} else {
 				bg := "#222"
 				if f.Kind == "quote" {
@@ -210,18 +208,10 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					rng := rand.New(rand.NewPCG(h, 0))
 					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
 				}
-				if isBskyURL(f.FullURL) {
-					node = A(Href(f.FullURL), Style(fmt.Sprintf("display: block; position: relative; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
-						P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
-						Div(Style("position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: rgba(0,133,255,0.92); border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
-							El("span", Style("font-size: 20px; line-height: 1;"), Text("🦋")),
-						),
-					)
-				} else {
-					node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
-						P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
-					)
-				}
+				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: block; position: relative; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(f.Text)),
+					faviconBadge,
+				)
 			}
 		} else {
 			node = A(Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")), Href(f.FullURL))

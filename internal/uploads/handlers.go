@@ -14,6 +14,7 @@ import (
 	_ "image/gif"
 	"image/jpeg"
 	_ "image/png"
+	"encoding/json"
 	"io"
 	"log"
 	"math/rand/v2"
@@ -112,12 +113,21 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		if n.Kind == "link" {
 			fullURL = n.Text.String
 		}
-		items = append(items, mediaItem{
+		item := mediaItem{
 			CreatedAt: n.CreatedAt,
 			FullURL:   fullURL,
 			Kind:      n.Kind,
 			Text:      n.Text.String,
-		})
+		}
+		if n.Kind == "link" && isWikipediaURL(n.Text.String) {
+			if ws, err := s.wikipediaSummary(r.Context(), n.Text.String); err == nil {
+				item.ThumbURL = ws.Thumbnail.Source
+				if item.ThumbURL == "" {
+					item.Text = ws.Extract
+				}
+			}
+		}
+		items = append(items, item)
 	}
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].CreatedAt.After(items[j].CreatedAt)
@@ -158,6 +168,8 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 						Div(Style("width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 22px solid white; margin-left: 5px;")),
 					),
 				)
+			} else if f.ThumbURL != "" {
+				node = A(Href(f.FullURL), Img(Src(f.ThumbURL), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")))
 			} else {
 				bg := "#222"
 				if f.Kind == "quote" {
@@ -559,6 +571,57 @@ func makeVideoThumbnail(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("ffmpeg: %w: %s", err, output)
 	}
 	return os.ReadFile(out.Name())
+}
+
+type wikiSummary struct {
+	Thumbnail struct {
+		Source string `json:"source"`
+	} `json:"thumbnail"`
+	Extract string `json:"extract"`
+}
+
+// wikipediaSummary fetches a Wikipedia page summary, using the cache table to avoid repeat fetches.
+func (s *service) wikipediaSummary(ctx context.Context, rawURL string) (wikiSummary, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return wikiSummary{}, err
+	}
+	title := strings.TrimPrefix(u.Path, "/wiki/")
+	apiURL := fmt.Sprintf("https://%s/api/rest_v1/page/summary/%s", u.Host, title)
+
+	if row, err := s.Queries.CacheLoad(ctx, apiURL); err == nil {
+		var ws wikiSummary
+		if err := json.Unmarshal([]byte(row.Value), &ws); err == nil {
+			return ws, nil
+		}
+	}
+
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		return wikiSummary{}, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return wikiSummary{}, err
+	}
+
+	var ws wikiSummary
+	if err := json.Unmarshal(body, &ws); err != nil {
+		return wikiSummary{}, err
+	}
+
+	_, _ = s.Queries.CacheStore(ctx, model.CacheStoreParams{Key: apiURL, Value: string(body)})
+	return ws, nil
+}
+
+// isWikipediaURL returns true for wikipedia.org/wiki/ URLs.
+func isWikipediaURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	return strings.HasSuffix(u.Hostname(), "wikipedia.org") && strings.HasPrefix(u.Path, "/wiki/")
 }
 
 // youtubeVideoID extracts the video ID from youtube.com/watch?v=, youtu.be/, and youtube.com/shorts/ URLs.

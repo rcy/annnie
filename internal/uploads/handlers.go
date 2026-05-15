@@ -229,13 +229,14 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			Script(Raw(snarfTimezoneJS)),
 		),
 		Body(
-			Div(ID("dropzone"),
-				H1(Text("annie file uploader")),
-				P(Textf("hello, %s", nick)),
+			Div(ID("dropzone"), Style("display: flex; flex-direction: column; gap: 1em"),
+				Code(
+					Textf("<annnie> %s: links to uploaded files will be sent to %s.  you can also drag and drop or paste a file to upload. ", nick, s.Bot.Channel),
+					A(Href("/old"), Text(" old")),
+				),
 				Form(Method("POST"), Action("uploads"), EncType("multipart/form-data"),
 					Input(Type("file"), Name("thefile")),
 					Button(Text("Upload")),
-					P(Textf("Links to uploaded files will be sent to %s.  You can also drag and drop or paste a file to upload.", s.Bot.Channel)),
 				),
 			),
 			Div(ID("image-index"), Style("display: flex; flex-wrap: wrap;"),
@@ -286,7 +287,7 @@ const dropzone = document.getElementById('dropzone');
         if (res.redirected) {
           location.href = res.url;
         } else {
-          location.href = '/uploads';
+          location.href = '/';
         }
       })
       .catch(err => {
@@ -397,7 +398,7 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.Bot.Conn.Privmsgf(s.Bot.Channel, "%s uploaded %s", nick, note.Text.String)
 
-	http.Redirect(w, r, "/uploads", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {
@@ -448,7 +449,7 @@ func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 	HTML(
 		Div(Text("upload successful")),
 		Div(A(Text(url), Href(url))),
-		Div(A(Text("upload another"), Href("/uploads"))),
+		Div(A(Text("upload another"), Href("/"))),
 	).Render(w)
 }
 

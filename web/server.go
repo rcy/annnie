@@ -375,7 +375,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			},
 		}
 
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		r.Get("/old", func(w http.ResponseWriter, r *http.Request) {
 			nick := r.URL.Query().Get("nick")
 
 			notes, err := getNotes(r.Context(), q, nick)
@@ -552,7 +552,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		r.Get("/uploads/success/{id}", uploader.SuccessHandler)
 		r.Get("/uploads/{id}/thumb", uploader.ThumbnailHandler)
 		r.Get("/uploads/{id}", uploader.FileHandler)
-		r.Get("/uploads", uploader.GetHandler)
+		r.Get("/", uploader.GetHandler)
 		r.Post("/uploads", uploader.PostHandler)
 	})
 

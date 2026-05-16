@@ -10,6 +10,7 @@ import (
 	"goirc/bot"
 	"goirc/db/model"
 	"goirc/events"
+	"goirc/handlers/annie"
 	"goirc/image"
 	"goirc/internal/idstr"
 	"goirc/internal/responder"
@@ -516,6 +517,44 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			}
 
 			_, _ = w.Write(out.Bytes())
+		})
+
+		r.Get("/system/{kind}", func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			kind := chi.URLParam(r, "kind")
+			q := model.New(db.DB)
+
+			override, err := annie.GetSystemOverride(ctx)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			prompt, err := annie.BuildSystemPrompt(ctx, q, kind, override)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if prompt == "" {
+				http.Error(w, "unknown kind: "+kind, http.StatusNotFound)
+				return
+			}
+
+			kinds := []string{"statement", "question", "request", "pleasantry"}
+			HTML(
+				Head(El("style", Raw("body{font-family:monospace;padding:1em} nav{margin-bottom:1em} nav a{margin-right:1em} nav a.active{color:inherit;text-decoration:none;opacity:0.5} pre{white-space:pre-wrap}"))),
+				Body(
+					El("h1", Text("annnie system prompt")),
+					El("pre", Text(annie.RoutingPrompt)),
+					El("nav", Group(Map(kinds, func(k string) Node {
+						if k == kind {
+							return A(Href("/system/"+k), Attr("class", "active"), Text(k))
+						}
+						return A(Href("/system/"+k), Text(k))
+					}))),
+					El("pre", Text(prompt)),
+				),
+			).Render(w)
 		})
 
 		r.Get("/week", func(w http.ResponseWriter, r *http.Request) {

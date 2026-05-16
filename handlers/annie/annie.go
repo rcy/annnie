@@ -23,6 +23,11 @@ func Handle(params responder.Responder) error {
 
 	q := model.New(db.DB.DB)
 
+	override, err := getSystemOverride(ctx)
+	if err != nil {
+		return fmt.Errorf("getSystemOverride: %w", err)
+	}
+
 	response, err := ai.Complete(ctx, "categorize input into statements, questions, requests, or pleasantries.  If it is a statement, reply with the one word 'statement'.  If it is a question, reply with 'question'.  If it is a request reply with 'request', if it is a pleasantry, reply with 'pleasantry'", msg)
 	if err != nil {
 		return err
@@ -30,7 +35,7 @@ func Handle(params responder.Responder) error {
 
 	switch response {
 	case "statement":
-		response, err := ai.Complete(ctx, "you are annnie, a friend hanging out in an irc channel. given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation (commas are ok)", msg)
+		response, err := ai.Complete(ctx, fmt.Sprintf("you are annnie, a friend hanging out in an irc channel. given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation (commas are ok)\n\n%s", override), msg)
 		if err != nil {
 			return err
 		}
@@ -53,11 +58,6 @@ func Handle(params responder.Responder) error {
 		lines := make([]string, len(notes))
 		for i, n := range notes {
 			lines[i] = fmt.Sprintf("%s <%s> %s", n.CreatedAt, n.Nick.String, n.Text.String)
-		}
-
-		override, err := getSystemOverride(ctx)
-		if err != nil {
-			return fmt.Errorf("getSystemOverride: %w", err)
 		}
 
 		systemPrompt := fmt.Sprintf(`
@@ -93,7 +93,9 @@ The current time and date is %s.
 You have been given a request. Read the request, and think about it in the context of all you have read in this channel.
 Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
 Do not refer to yourself in the third person.
-`, time.Now().Format(time.RFC1123))
+
+%s
+`, time.Now().Format(time.RFC1123), override)
 
 		systemPrompt += strings.Join(lines, "\n")
 
@@ -103,11 +105,13 @@ Do not refer to yourself in the third person.
 		}
 		params.Privmsgf(params.Target(), "%s: %s", params.Nick(), response)
 	case "pleasantry":
-		systemPrompt := `
+		systemPrompt := fmt.Sprintf(`
 You are annnie, a friend hanging out in an irc channel.
 Someone has posted some pleasantry or small talk.
 Respond in kind, but in a very uninterested dismissive way.
-Respond in lower case, with minimal punctuation (commas are ok).`
+Respond in lower case, with minimal punctuation (commas are ok).
+
+%s`, override)
 
 		response, err := ai.Complete(ctx, systemPrompt, msg)
 		if err != nil {

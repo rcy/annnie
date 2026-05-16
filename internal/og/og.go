@@ -16,6 +16,8 @@ type Data struct {
 	Image       sql.NullString
 }
 
+var ErrNoTags = fmt.Errorf("no valid og tags found")
+
 func Fetch(ctx context.Context, rawURL string) (Data, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -53,7 +55,7 @@ func Fetch(ctx context.Context, rawURL string) (Data, error) {
 	}
 
 	if !data.Description.Valid && !data.Title.Valid && !data.Image.Valid {
-		return Data{}, fmt.Errorf("no valid og tags found")
+		return Data{}, ErrNoTags
 	}
 
 	return data, nil

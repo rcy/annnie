@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"goirc/db/model"
 	"goirc/internal/og"
 	"goirc/internal/responder"
@@ -17,9 +18,11 @@ func Link(params responder.Responder) error {
 	// posted in a private message?
 	isAnonymous := params.Target() == params.Nick()
 
-	og, err := og.Fetch(context.TODO(), url)
+	tags, err := og.Fetch(context.TODO(), url)
 	if err != nil {
-		return err
+		if !errors.Is(err, og.ErrNoTags) {
+			return err
+		}
 	}
 
 	_, err = q.InsertNote(context.TODO(), model.InsertNoteParams{
@@ -28,9 +31,9 @@ func Link(params responder.Responder) error {
 		Kind:          "link",
 		Text:          sql.NullString{String: url, Valid: true},
 		Anon:          isAnonymous,
-		OgTitle:       og.Title,
-		OgDescription: og.Description,
-		OgImage:       og.Image,
+		OgTitle:       tags.Title,
+		OgDescription: tags.Description,
+		OgImage:       tags.Image,
 	})
 	if err != nil {
 		return err

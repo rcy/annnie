@@ -170,22 +170,28 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					)),
 				)
 			} else {
-				displayText := f.Text
-				bg := "#222"
-				if f.OgTitle != "error" {
+				var displayText, bg string
+
+				switch f.Kind {
+				case "link":
+					bg = "#222"
 					displayText = f.OgTitle
-				} else {
-					// mark errored ones as red
-					bg = "#522"
-				}
-				if f.Kind == "quote" {
+					if f.OgTitle == "error" {
+						displayText = f.Text
+						bg = "#522"
+					}
+				case "quote", "note":
+					displayText = f.Text
 					var h uint64
 					for i, c := range f.Text {
 						h += uint64(c) * uint64(i+1)
 					}
 					rng := rand.New(rand.NewPCG(h, 0))
 					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
+				default:
+					displayText = f.Text
 				}
+
 				faviconURL := ""
 				if u, err := url.Parse(f.FullURL); err == nil && u.Host != "" {
 					faviconURL = "https://www.google.com/s2/favicons?domain=" + u.Hostname() + "&sz=32"

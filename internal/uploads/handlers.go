@@ -294,9 +294,12 @@ document.addEventListener('paste', (e) => {
 
 document.querySelectorAll('[data-fittext]').forEach(el => {
   const parent = el.parentElement;
+  const style = getComputedStyle(parent);
+  const availW = parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const availH = parent.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
   let size = 128;
   el.style.fontSize = size + 'px';
-  while ((el.scrollHeight > parent.clientHeight || el.scrollWidth > parent.clientWidth) && size > 10) {
+  while ((el.scrollHeight > availH || el.scrollWidth > availW) && size > 10) {
     el.style.fontSize = --size + 'px';
   }
 });

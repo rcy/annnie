@@ -540,7 +540,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				return
 			}
 
-			kinds := []string{"statement", "question", "request", "pleasantry"}
+			kinds := []string{"statement", "question", "pleasantry"}
 			HTML(
 				Head(El("style", Raw("body{font-family:monospace;padding:1em} nav{margin-bottom:1em} nav a{margin-right:1em} nav a.active{color:inherit;text-decoration:none;opacity:0.5} pre{white-space:pre-wrap}"))),
 				Body(

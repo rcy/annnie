@@ -91,24 +91,6 @@ Do not refer to yourself in the third person.
 %s
 %s`, now, override, strings.Join(lines, "\n")), nil
 
-	case "request":
-		notes, err := q.NonAnonNotes(ctx)
-		if err != nil {
-			return "", err
-		}
-		lines := make([]string, len(notes))
-		for i, n := range notes {
-			lines[i] = fmt.Sprintf("%s <%s> %s", n.CreatedAt, n.Nick.String, n.Text.String)
-		}
-		return fmt.Sprintf(`You are annnie, a friend hanging out in an irc channel.
-The current time and date is %s.
-You have been given a request. Read the request, and think about it in the context of all you have read in this channel.
-Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
-Do not refer to yourself in the third person.
-
-%s
-%s`, now, override, strings.Join(lines, "\n")), nil
-
 	case "pleasantry":
 		return fmt.Sprintf(`You are annnie, a friend hanging out in an irc channel.
 Someone has posted some pleasantry or small talk.
@@ -132,4 +114,4 @@ func GetSystemOverride(ctx context.Context) (string, error) {
 	return cfg.Value, nil
 }
 
-const RoutingPrompt = "categorize input into statements, questions, requests, or pleasantries.  If it is a statement, reply with the one word 'statement'.  If it is a question, reply with 'question'.  If it is a request reply with 'request', if it is a pleasantry, reply with 'pleasantry'"
+const RoutingPrompt = "categorize input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'."

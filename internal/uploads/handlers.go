@@ -170,14 +170,14 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					)),
 				)
 			} else {
-				displayText := f.OgDescription
-				if displayText == "" {
-					displayText = f.OgTitle
-				}
-				if displayText == "" {
-					displayText = f.Text
-				}
+				displayText := f.Text
 				bg := "#222"
+				if f.OgTitle != "error" {
+					displayText = f.OgTitle
+				} else {
+					// mark errored ones as red
+					bg = "#522"
+				}
 				if f.Kind == "quote" {
 					var h uint64
 					for i, c := range f.Text {
@@ -532,14 +532,10 @@ func (s *service) BackfillOGHandler(w http.ResponseWriter, r *http.Request) {
 
 	var count int
 	for _, row := range rows {
-		fmt.Println("DEBUGX shL5 6", row.ID, row.Text.String)
-
 		if ctx.Err() != nil {
 			break
 		}
 		data, err := og.Fetch(ctx, row.Text.String)
-		fmt.Println("DEBUGX 2Yeh 7", data, err)
-
 		if err != nil {
 			data.Title = sql.NullString{String: "error", Valid: true}
 			data.Description = sql.NullString{String: err.Error(), Valid: true}

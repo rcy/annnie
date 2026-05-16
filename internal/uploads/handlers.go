@@ -164,7 +164,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					faviconURL = "https://www.google.com/s2/favicons?domain=" + u.Hostname() + "&sz=32"
 				}
 				node = A(Href(f.FullURL), Style("display: block; position: relative; width: 100%; height: 100%;"),
-					Img(Src(f.OgImage), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: cover;")),
+					Img(Src(f.OgImage), Loading("lazy"), Style("width: 100%; height: 100%; object-fit: contain;")),
 					If(faviconURL != "", Div(Style("position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.85); border-radius: 6px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
 						Img(Src(faviconURL), Style("width: 20px; height: 20px;")),
 					)),

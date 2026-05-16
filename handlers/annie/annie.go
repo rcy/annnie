@@ -55,13 +55,20 @@ func Handle(params responder.Responder) error {
 			lines[i] = fmt.Sprintf("%s <%s> %s", n.CreatedAt, n.Nick.String, n.Text.String)
 		}
 
+		override, err := getSystemOverride(ctx)
+		if err != nil {
+			return fmt.Errorf("getSystemOverride: %w", err)
+		}
+
 		systemPrompt := fmt.Sprintf(`
 You are annnie, a friend hanging out in an irc channel.
 The current time and date is %s.
 You have been asked a question. Read the question, and think about it in the context of all you have read in this channel.
 Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
 Do not refer to yourself in the third person.
-`, time.Now().Format(time.RFC1123))
+
+%s
+`, override, time.Now().Format(time.RFC1123))
 
 		systemPrompt += strings.Join(lines, "\n")
 
@@ -112,4 +119,12 @@ Respond in lower case, with minimal punctuation (commas are ok).`
 	}
 
 	return nil
+}
+
+func getSystemOverride(ctx context.Context) (string, error) {
+	cfg, err := model.New(db.DB.DB).GetConfig(ctx, "system")
+	if err != nil {
+		return "", fmt.Errorf("GetConfig: %w", err)
+	}
+	return cfg.Value, nil
 }

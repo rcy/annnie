@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -33,6 +34,10 @@ func Fetch(ctx context.Context, rawURL string) (Data, error) {
 		return Data{}, err
 	}
 	defer resp.Body.Close()
+
+	if strings.HasPrefix(resp.Header.Get("Content-Type"), "image/") {
+		return Data{Image: sql.NullString{String: rawURL, Valid: true}}, nil
+	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {

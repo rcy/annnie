@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goirc/handlers/annie"
 	"goirc/image"
 	"goirc/internal/ai"
 	"goirc/internal/responder"
@@ -43,7 +44,12 @@ func NationalDay(params responder.Responder) error {
 		return nil
 	}
 
-	completion, err := ai.Complete(context.TODO(), "in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", event)
+	override, err := annie.GetSystemOverride(context.TODO())
+	if err != nil {
+		return fmt.Errorf("getSystemOverride: %w", err)
+	}
+
+	completion, err := ai.Complete(context.TODO(), fmt.Sprintf("%s. in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", override), event)
 	if err != nil {
 		return err
 	}

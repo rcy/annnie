@@ -38,10 +38,11 @@ func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, erro
 	client := openai.NewClient()
 
 	imgResp, err := client.Images.Generate(ctx, openai.ImageGenerateParams{
-		Prompt:  prompt,
-		Model:   "gpt-image-2",
-		N:       openai.Int(1),
-		Quality: openai.ImageGenerateParamsQualityMedium,
+		Prompt:     prompt,
+		Model:      "gpt-image-2",
+		N:          openai.Int(1),
+		Quality:    openai.ImageGenerateParamsQualityMedium,
+		Moderation: openai.ImageGenerateParamsModerationLow,
 	})
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "billing") {

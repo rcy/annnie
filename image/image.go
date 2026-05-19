@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	openaiofficial "github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3"
 )
 
 func mustGetenv(key string) string {
@@ -35,13 +35,13 @@ func (gi *GeneratedImage) URL() string {
 }
 
 func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, error) {
-	client := openaiofficial.NewClient()
+	client := openai.NewClient()
 
-	imgResp, err := client.Images.Generate(ctx, openaiofficial.ImageGenerateParams{
+	imgResp, err := client.Images.Generate(ctx, openai.ImageGenerateParams{
 		Prompt:  prompt,
 		Model:   "gpt-image-2",
-		N:       openaiofficial.Int(1),
-		Quality: openaiofficial.ImageGenerateParamsQualityMedium,
+		N:       openai.Int(1),
+		Quality: openai.ImageGenerateParamsQualityMedium,
 	})
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "billing") {

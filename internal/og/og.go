@@ -53,8 +53,13 @@ func Fetch(ctx context.Context, rawURL string) (Data, error) {
 		return v
 	}
 
+	title := get("og:title")
+	if title == "" {
+		title = doc.Find("title").First().Text()
+	}
+
 	data := Data{
-		Title:       nullStr(get("og:title")),
+		Title:       nullStr(title),
 		Description: nullStr(get("og:description")),
 		Image:       nullStr(get("og:image")),
 	}

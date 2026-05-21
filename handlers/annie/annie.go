@@ -28,7 +28,7 @@ func Handle(params responder.Responder) error {
 		return fmt.Errorf("getSystemOverride: %w", err)
 	}
 
-	kind, err := ai.Complete(ctx, RoutingPrompt, msg)
+	kind, err := ai.CompleteOllama(ctx, RoutingPrompt, msg)
 	if err != nil {
 		return err
 	}

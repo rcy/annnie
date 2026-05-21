@@ -11,7 +11,7 @@ import (
 
 var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
 var ErrRejected = errors.New("Rejected")
-var Complete = CompleteOpenAI
+var Complete = CompleteOllama
 
 func getModel(ctx context.Context) string {
 	q := model.New(db.DB.DB)

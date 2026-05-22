@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type ollamaRequest struct {
@@ -32,7 +33,18 @@ func CompleteOllama(ctx context.Context, systemPrompt string, prompt string) (st
 	if err != nil {
 		return "", fmt.Errorf("CompleteOllama: %w", err)
 	}
-	return result.Message.Content, err
+
+	content := stripThinking(result.Message.Content)
+
+	return content, err
+}
+
+func stripThinking(s string) string {
+	_, after, found := strings.Cut(s, "</think>")
+	if found {
+		return strings.TrimSpace(after)
+	}
+	return s
 }
 
 func completeOllamaResponse(ctx context.Context, systemPrompt string, prompt string) (*ollamaResponse, error) {

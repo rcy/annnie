@@ -52,6 +52,7 @@ type delivery struct {
 type Bot struct {
 	Conn               *irc.Connection
 	Channel            string
+	DiagChannel        string
 	Handlers           []Handler
 	LastEvent          *irc.Event
 	IsJoined           bool
@@ -129,6 +130,7 @@ func Connect(es *evoke.Service, nick string, channel string, server string, sasl
 
 	bot.Events = es
 	bot.Channel = channel
+	bot.DiagChannel = channel + "-diag"
 	bot.Conn = irc.IRC(nick, "github.com/rcy/annnie")
 	bot.Conn.VerboseCallbackHandler = false
 	bot.Conn.Debug = true
@@ -139,8 +141,13 @@ func Connect(es *evoke.Service, nick string, channel string, server string, sasl
 	bot.Conn.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	bot.Conn.AddCallback("001", func(e *irc.Event) {
 		bot.Conn.Join(channel)
+		bot.Conn.Join(bot.DiagChannel)
 	})
 	bot.Conn.AddCallback("353", func(e *irc.Event) {
+		if e.Arguments[len(e.Arguments)-2] == bot.DiagChannel {
+			return
+		}
+
 		// clear the presence of all channel nicks
 		_, err := db.DB.Exec(`update channel_nicks set updated_at = current_timestamp, present = false where present = true`)
 		if err != nil {
@@ -167,6 +174,9 @@ on conflict(channel, nick) do update set updated_at = current_timestamp, present
 	})
 	bot.Conn.AddCallback("366", func(e *irc.Event) {})
 	bot.Conn.AddCallback("PRIVMSG", func(e *irc.Event) {
+		if e.Arguments[0] == bot.DiagChannel {
+			return
+		}
 		if e.Arguments[0] == bot.Channel {
 			es.MustInsert(bot.Channel, events.MessageReceived{Nick: e.Nick, Content: e.Arguments[1]})
 			bot.resetIdle()
@@ -176,7 +186,9 @@ on conflict(channel, nick) do update set updated_at = current_timestamp, present
 		go bot.RunHandlers(e)
 	})
 	bot.Conn.AddCallback("JOIN", func(e *irc.Event) {
-		fmt.Println("JOIN", e.Nick)
+		if e.Arguments[0] == bot.DiagChannel {
+			return
+		}
 		if e.Nick != bot.Conn.GetNick() {
 			es.MustInsert(bot.Channel, events.NickJoined{Nick: e.Nick})
 
@@ -213,6 +225,9 @@ on conflict(channel, nick) do update set updated_at = current_timestamp, present
 		}
 	})
 	bot.Conn.AddCallback("PART", func(e *irc.Event) {
+		if e.Arguments[0] == bot.DiagChannel {
+			return
+		}
 		if e.Nick != nick {
 			es.MustInsert(bot.Channel, events.NickParted{Nick: e.Nick})
 
@@ -303,6 +318,10 @@ func (bot *Bot) SendLaters(channel string, nick string) {
 			bot.Conn.Privmsgf(channel, "%s: %s (from %s %s ago)", nick, row.Message, row.Nick, util.Since(row.CreatedAt))
 		}
 	}
+}
+
+func (bot *Bot) Diagf(format string, a ...interface{}) {
+	bot.MakePrivmsgf()(bot.DiagChannel, format, a...)
 }
 
 func (bot *Bot) MakePrivmsgf() func(string, string, ...interface{}) {

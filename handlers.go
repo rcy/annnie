@@ -87,6 +87,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)
+	b.Handle(`^!balance$`, handlers.Balance)
 
 	b.Repeat(10*time.Second, handlers.DoRemind)
 	b.IdleRepeatAfterReset(8*time.Hour, handlers.POM)

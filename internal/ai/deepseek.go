@@ -13,6 +13,10 @@ import (
 	"github.com/openai/openai-go/v3/option"
 )
 
+type deepSeekMessage struct {
+	ReasoningContent string `json:"reasoning_content"`
+}
+
 type DeepSeekBalanceInfo struct {
 	Currency        string `json:"currency"`
 	TotalBalance    string `json:"total_balance"`
@@ -74,7 +78,14 @@ func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt strin
 		return "", fmt.Errorf("no completion choices returned")
 	}
 
-	content := resp.Choices[0].Message.Content
+	msg := resp.Choices[0].Message
 
-	return content, nil
+	if diagFn := diagFuncFromContext(ctx); diagFn != nil {
+		var dsMsg deepSeekMessage
+		if err := json.Unmarshal([]byte(msg.RawJSON()), &dsMsg); err == nil && dsMsg.ReasoningContent != "" {
+			diagFn(dsMsg.ReasoningContent)
+		}
+	}
+
+	return msg.Content, nil
 }

@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"goirc/internal/responder"
 	"goirc/pubsub"
 	"strings"
@@ -9,6 +10,7 @@ import (
 )
 
 type HandlerParams struct {
+	ctx       context.Context
 	privmsgf  func(string, string, ...interface{})
 	msg       string
 	nick      string
@@ -17,8 +19,15 @@ type HandlerParams struct {
 	LastEvent *irc.Event
 }
 
-func NewHandlerParams(target string, privmsgf func(string, string, ...interface{})) HandlerParams {
-	return HandlerParams{target: target, privmsgf: privmsgf}
+func NewHandlerParams(ctx context.Context, target string, privmsgf func(string, string, ...interface{})) HandlerParams {
+	return HandlerParams{ctx: ctx, target: target, privmsgf: privmsgf}
+}
+
+func (hp HandlerParams) Context() context.Context {
+	if hp.ctx != nil {
+		return hp.ctx
+	}
+	return context.Background()
 }
 
 func (hp HandlerParams) Privmsgf(target string, format string, a ...interface{}) {

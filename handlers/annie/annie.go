@@ -13,7 +13,7 @@ import (
 )
 
 func Handle(params responder.Responder) error {
-	ctx := context.TODO()
+	ctx := params.Context()
 
 	if len(params.Matches()) < 2 {
 		return nil

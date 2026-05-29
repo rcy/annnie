@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"goirc/internal/ai"
+
 	"github.com/rcy/evoke"
 	irc "github.com/thoj/go-ircevent"
 )
@@ -76,6 +78,7 @@ func (b *Bot) Repeat(timeout time.Duration, action HandlerFunction) {
 		for {
 			time.Sleep(timeout)
 			err := action(HandlerParams{
+				ctx:      context.Background(),
 				privmsgf: b.MakePrivmsgf(),
 				target:   b.Channel,
 			})
@@ -89,6 +92,7 @@ func (b *Bot) Repeat(timeout time.Duration, action HandlerFunction) {
 func (b *Bot) IdleRepeat(timeout time.Duration, action HandlerFunction) {
 	reset := idle.Repeat(timeout, func() {
 		err := action(HandlerParams{
+			ctx:      context.Background(),
 			privmsgf: b.MakePrivmsgf(),
 			target:   b.Channel,
 		})
@@ -103,6 +107,7 @@ func (b *Bot) IdleRepeat(timeout time.Duration, action HandlerFunction) {
 func (b *Bot) IdleRepeatAfterReset(timeout time.Duration, action HandlerFunction) {
 	reset := idle.RepeatAfterReset(timeout, func() {
 		err := action(HandlerParams{
+			ctx:      context.Background(),
 			privmsgf: b.MakePrivmsgf(),
 			target:   b.Channel,
 		})
@@ -365,10 +370,13 @@ func (bot *Bot) RunHandlers(e *irc.Event) {
 		target = channel
 	}
 
+	ctx := ai.WithDiagFunc(context.Background(), func(s string) { bot.Diagf("%s", s) })
+
 	for _, handler := range bot.Handlers {
 		matches := handler.regexp.FindStringSubmatch(msg)
 		if len(matches) > 0 {
 			err := handler.action(HandlerParams{
+				ctx:       ctx,
 				privmsgf:  bot.MakePrivmsgf(),
 				msg:       msg,
 				nick:      nick,

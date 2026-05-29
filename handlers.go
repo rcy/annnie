@@ -135,9 +135,9 @@ func addHandlers(b *bot.Bot) {
 		// send anonymous note
 		switch msg.Kind {
 		case "link":
-			err = handlers.AnonLink(bot.NewHandlerParams(b.Channel, b.MakePrivmsgf()))
+			err = handlers.AnonLink(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
 		case "quote":
-			err = handlers.AnonQuote(bot.NewHandlerParams(b.Channel, b.MakePrivmsgf()))
+			err = handlers.AnonQuote(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
 		default:
 			b.Conn.Privmsgf(b.Channel, "unhandled msg.Kind: %s", msg.Kind)
 		}
@@ -166,7 +166,7 @@ func addHandlers(b *bot.Bot) {
 
 	pubsub.Subscribe("anonnoteposted", func(note any) {
 		go func() {
-			err := handlers.AnonLink(bot.NewHandlerParams(b.Channel, b.MakePrivmsgf()))
+			err := handlers.AnonLink(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
 			if err != nil {
 				if errors.Is(err, ai.ErrBilling) {
 					return
@@ -181,7 +181,7 @@ func addHandlers(b *bot.Bot) {
 
 	pubsub.Subscribe("anonquoteposted", func(note any) {
 		go func() {
-			err := handlers.AnonQuote(bot.NewHandlerParams(b.Channel, b.MakePrivmsgf()))
+			err := handlers.AnonQuote(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
 			if err != nil {
 				if errors.Is(err, ai.ErrBilling) {
 					return

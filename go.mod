@@ -12,7 +12,7 @@ require (
 	github.com/kkdai/youtube/v2 v2.8.1
 	github.com/nathan-osman/go-sunrise v1.1.0
 	github.com/olebedev/when v1.1.0
-	github.com/openai/openai-go/v3 v3.33.0
+	github.com/openai/openai-go/v3 v3.37.0
 	github.com/pariz/gountries v0.1.6
 	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91

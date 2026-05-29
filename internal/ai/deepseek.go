@@ -74,7 +74,6 @@ func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt strin
 		return "", fmt.Errorf("no completion choices returned")
 	}
 
-	//content := stripThinking(resp.Choices[0].Message.Content)
 	content := resp.Choices[0].Message.Content
 
 	return content, nil

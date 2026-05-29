@@ -10,7 +10,6 @@ import (
 	"goirc/internal/responder"
 	db "goirc/model"
 	"strings"
-	"time"
 )
 
 func Handle(params responder.Responder) error {
@@ -65,7 +64,7 @@ func Handle(params responder.Responder) error {
 }
 
 func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override string) (string, error) {
-	now := time.Now().Format(time.RFC1123)
+	now := "" // time.Now().Format(time.RFC1123)
 
 	switch kind {
 	case "statement":

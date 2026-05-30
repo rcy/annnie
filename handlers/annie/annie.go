@@ -110,4 +110,4 @@ func GetSystemOverride(ctx context.Context) (string, error) {
 	return cfg.Value, nil
 }
 
-const RoutingPrompt = "categorize input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Do not make any tool calls to help make this determination."
+const RoutingPrompt = "Without making any tool calls, categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."

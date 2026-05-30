@@ -171,6 +171,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				)
 			} else {
 				var displayText, bg string
+				href := f.FullURL
 
 				switch f.Kind {
 				case "link":
@@ -188,6 +189,10 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 					}
 					rng := rand.New(rand.NewPCG(h, 0))
 					bg = fmt.Sprintf("hsl(%d,60%%,22%%)", rng.IntN(360))
+					if f.Kind == "quote" {
+						href = "https://duckduckgo.com/?q=" + url.QueryEscape(f.Text)
+						displayText = f.Text
+					}
 				default:
 					displayText = f.Text
 				}
@@ -196,7 +201,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 				if u, err := url.Parse(f.FullURL); err == nil && u.Host != "" {
 					faviconURL = "https://www.google.com/s2/favicons?domain=" + u.Hostname() + "&sz=32"
 				}
-				node = A(Href(f.FullURL), Style(fmt.Sprintf("display: flex; position: relative; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
+				node = A(Href(href), Style(fmt.Sprintf("display: flex; position: relative; align-items: center; justify-content: center; width: 100%%; height: 100%%; padding: 12px; box-sizing: border-box; background: %s; color: #eee; text-decoration: none; overflow: hidden;", bg)),
 					P(Attr("data-fittext", ""), Style("margin: 0; font-weight: bold; line-height: 1.2; overflow: hidden; width: 100%;"), Text(displayText)),
 					If(faviconURL != "", Div(Style("position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.85); border-radius: 6px; display: flex; align-items: center; justify-content: center; pointer-events: none;"),
 						Img(Src(faviconURL), Style("width: 20px; height: 20px;")),

@@ -64,8 +64,6 @@ func Handle(params responder.Responder) error {
 }
 
 func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override string) (string, error) {
-	now := "" // time.Now().Format(time.RFC1123)
-
 	switch kind {
 	case "statement":
 		return fmt.Sprintf(`you are annnie, a friend hanging out in an irc channel. given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation (commas are ok)
@@ -82,13 +80,12 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 			lines[i] = fmt.Sprintf("%s <%s> %s", n.CreatedAt, n.Nick.String, n.Text.String)
 		}
 		return fmt.Sprintf(`You are annnie, a friend hanging out in an irc channel.
-The current time and date is %s.
 You have been asked a question. Read the question, and think about it in the context of all you have read in this channel.
 Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
 Do not refer to yourself in the third person.
 
 %s
-%s`, now, override, strings.Join(lines, "\n")), nil
+%s`, override, strings.Join(lines, "\n")), nil
 
 	case "pleasantry":
 		return fmt.Sprintf(`You are annnie, a friend hanging out in an irc channel.
@@ -113,4 +110,4 @@ func GetSystemOverride(ctx context.Context) (string, error) {
 	return cfg.Value, nil
 }
 
-const RoutingPrompt = "categorize input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'."
+const RoutingPrompt = "categorize input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Do not make any tool calls to help make this determination."

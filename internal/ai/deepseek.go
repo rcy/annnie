@@ -83,6 +83,8 @@ func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt strin
 		return "", fmt.Errorf("diagFuncFromContext did not return a function")
 	}
 
+	diagFn("--- " + userPrompt)
+
 	client := openai.NewClient(
 		option.WithBaseURL("https://api.deepseek.com/v1"),
 		option.WithAPIKey(os.Getenv("DEEPSEEK_API_KEY")),
@@ -115,24 +117,23 @@ func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt strin
 
 		var dsMsg deepSeekMessage
 		if err := json.Unmarshal([]byte(msg.RawJSON()), &dsMsg); err == nil && dsMsg.ReasoningContent != "" {
-			diagFn("* " + dsMsg.ReasoningContent)
+			diagFn("RSN " + dsMsg.ReasoningContent)
 		}
 
 		if choice.FinishReason == "tool_calls" {
 			messages = append(messages, msg.ToParam())
 			for _, call := range msg.ToolCalls {
-				diagFn("> tool: " + call.Function.Name)
 				result, err := handleDeepSeekTool(call.Function.Name)
 				if err != nil {
 					return "", err
 				}
-				diagFn("< tool: " + result)
+				diagFn(fmt.Sprintf("TOOL %s -> %s", call.Function.Name, result))
 				messages = append(messages, openai.ToolMessage(result, call.ID))
 			}
 			continue
 		}
 
-		diagFn("END")
+		diagFn("OUT " + msg.Content)
 
 		return msg.Content, nil
 	}

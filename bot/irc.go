@@ -60,6 +60,7 @@ type Bot struct {
 	IsJoined           bool
 	idleResetFunctions []func()
 	queue              chan delivery
+	diagQueue          chan delivery
 	Events             evoke.Inserter
 }
 
@@ -140,7 +141,7 @@ func Connect(es *evoke.Service, nick string, channel string, server string, sasl
 	bot.Conn.VerboseCallbackHandler = false
 	bot.Conn.Debug = true
 	bot.Conn.UseTLS = true
-	bot.Conn.UseSASL = true
+	bot.Conn.UseSASL = false
 	bot.Conn.SASLLogin = saslLogin
 	bot.Conn.SASLPassword = saslPassword
 	bot.Conn.TLSConfig = &tls.Config{InsecureSkipVerify: true}
@@ -280,26 +281,41 @@ func (bot *Bot) setupDeliveryQueue() {
 	)
 
 	bot.queue = make(chan delivery, queueSize)
+	bot.diagQueue = make(chan delivery, queueSize)
 
 	go func() {
 		delay := initialDelay
 		lastSendTime := time.Now()
-		for d := range bot.queue {
-			if time.Now().Sub(lastSendTime) > coolOffDuration {
-				delay = initialDelay
-			}
+
+		send := func(d delivery) {
 			bot.Conn.Privmsg(d.target, d.message)
 			lastSendTime = time.Now()
-
-			// log sent event
 			if d.target == bot.Channel {
 				_ = bot.Events.Insert(d.target, events.MessageSent{Content: d.message})
-			} else {
+			} else if d.target != bot.DiagChannel {
 				_ = bot.Events.Insert(d.target, events.PrivateMessageSent{Content: d.message})
+			}
+		}
+
+		for {
+			if time.Since(lastSendTime) > coolOffDuration {
+				delay = initialDelay
+			}
+
+			// Prefer high-priority queue; fall back to diag queue.
+			select {
+			case d := <-bot.queue:
+				send(d)
+			default:
+				select {
+				case d := <-bot.queue:
+					send(d)
+				case d := <-bot.diagQueue:
+					send(d)
+				}
 			}
 
 			time.Sleep(delay)
-
 			delay = time.Duration(float64(delay) * delayMultiplier)
 			if delay > maxDelay {
 				delay = maxDelay
@@ -326,7 +342,12 @@ func (bot *Bot) SendLaters(channel string, nick string) {
 }
 
 func (bot *Bot) Diagf(format string, a ...interface{}) {
-	bot.MakePrivmsgf()(bot.DiagChannel, format, a...)
+	str := fmt.Sprintf(format, a...)
+	for _, line := range strings.Split(str, "\n") {
+		for _, chunk := range splitString(line, 420) {
+			bot.diagQueue <- delivery{target: bot.DiagChannel, message: chunk}
+		}
+	}
 }
 
 func (bot *Bot) MakePrivmsgf() func(string, string, ...interface{}) {

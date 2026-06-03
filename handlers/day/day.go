@@ -1,16 +1,18 @@
 package day
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"goirc/handlers/annie"
 	"goirc/image"
 	"goirc/internal/ai"
 	"goirc/internal/responder"
-	"goirc/shell"
+	"net/http"
+	"regexp"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type stack struct {
@@ -44,12 +46,12 @@ func NationalDay(params responder.Responder) error {
 		return nil
 	}
 
-	override, err := annie.GetSystemOverride(context.TODO())
+	override, err := annie.GetSystemOverride(params.Context())
 	if err != nil {
 		return fmt.Errorf("getSystemOverride: %w", err)
 	}
 
-	completion, err := ai.Complete(context.TODO(), fmt.Sprintf("%s. in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", override), event)
+	completion, err := ai.Complete(params.Context(), fmt.Sprintf("%s. in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", override), event)
 	if err != nil {
 		return err
 	}
@@ -83,22 +85,40 @@ func fetchDayEvents(day string) (*stack, error) {
 	day = strings.Replace(day, "sep/", "sept/", 1)
 
 	url := fmt.Sprintf("https://www.daysoftheyear.com/days/%s", day)
-	cmd := fmt.Sprintf(`curl --location -s %s | pup 'body img json{}' | jq -r .[].alt | grep -E '\bDay\b'`, url)
-	r, err := shell.Command(cmd)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	r = strings.TrimSpace(r)
-	events := strings.Split(r, "\n")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var events []string
+	doc.Find("body img").Each(func(_ int, s *goquery.Selection) {
+		if alt, exists := s.Attr("alt"); exists && dayWordRe.MatchString(alt) {
+			events = append(events, alt)
+		}
+	})
 
 	return &stack{items: events}, nil
 }
+
+var dayWordRe = regexp.MustCompile(`\bDay\b`)
 
 // TODO: this shouldn't be here
 func Image(params responder.Responder) error {
 	prompt := params.Match(1)
 	start := time.Now()
-	gi, err := image.GenerateGPTImage(context.Background(), prompt)
+	gi, err := image.GenerateGPTImage(params.Context(), prompt)
 	if err != nil {
 		if errors.Is(err, ai.ErrRejected) {
 			elapsed := time.Since(start)

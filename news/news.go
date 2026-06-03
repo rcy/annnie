@@ -18,11 +18,12 @@ func NewsByTopic(ctx context.Context, topic string, length int) (string, error) 
 		return "", err
 	}
 
-	completion, err := ai.Complete(ctx,
-		fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
-		fmt.Sprintf("Only consider headlines pertaining to the topic: %s.  If no headlines match the topic, expand the topic until you can report some news. \n\nHeadlines follow: %s\n",
+	completion, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
+		UserPrompt: fmt.Sprintf("Only consider headlines pertaining to the topic: %s.  If no headlines match the topic, expand the topic until you can report some news. \n\nHeadlines follow: %s\n",
 			topic,
-			strings.Join(headlines, ".\n")))
+			strings.Join(headlines, ".\n")),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -35,9 +36,10 @@ func News(ctx context.Context, length int) (string, error) {
 		return "", err
 	}
 
-	completion, err := ai.Complete(ctx,
-		fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
-		strings.Join(headlines, ".\n"))
+	completion, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: fmt.Sprintf("Summarize the following headlines in %d characters or less.", length),
+		UserPrompt:   strings.Join(headlines, ".\n"),
+	})
 	if err != nil {
 		return "", err
 	}

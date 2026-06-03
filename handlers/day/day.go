@@ -51,7 +51,11 @@ func NationalDay(params responder.Responder) error {
 		return fmt.Errorf("getSystemOverride: %w", err)
 	}
 
-	completion, err := ai.Complete(params.Context(), fmt.Sprintf("%s. in one short sentence, imperatively and cynically describe a way to celebrate the given national day to your friends in the chat.  be terse use dry humour and minimal punctuation.", override), event)
+	completion, err := ai.Complete(params.Context(), ai.Params{
+		UseTools:     false,
+		SystemPrompt: fmt.Sprintf("%s. Say something funny about this day. Output a single sentence. Don't mention the day itself.", override),
+		UserPrompt:   event,
+	})
 	if err != nil {
 		return err
 	}

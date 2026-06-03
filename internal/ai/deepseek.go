@@ -116,9 +116,9 @@ func getSportsScores(ctx context.Context, league string) (string, error) {
 
 	var result struct {
 		Events []struct {
-			Name        string `json:"name"`
-			ShortName   string `json:"shortName"`
-			Status      struct {
+			Name      string `json:"name"`
+			ShortName string `json:"shortName"`
+			Status    struct {
 				Type struct {
 					Description string `json:"description"`
 					Completed   bool   `json:"completed"`
@@ -192,13 +192,19 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 	}
 }
 
-func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
+type Params struct {
+	SystemPrompt string
+	UserPrompt   string
+	UseTools     bool
+}
+
+func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 	diagFn := diagFuncFromContext(ctx)
 	if diagFn == nil {
 		return "", fmt.Errorf("diagFuncFromContext did not return a function")
 	}
 
-	diagFn("--- " + userPrompt)
+	diagFn("--- " + params.UserPrompt)
 
 	client := openai.NewClient(
 		option.WithBaseURL("https://api.deepseek.com/v1"),
@@ -206,15 +212,20 @@ func CompleteDeepSeek(ctx context.Context, systemPrompt string, userPrompt strin
 	)
 
 	messages := []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage(systemPrompt),
-		openai.UserMessage(userPrompt),
+		openai.SystemMessage(params.SystemPrompt),
+		openai.UserMessage(params.UserPrompt),
+	}
+
+	tools := []openai.ChatCompletionToolUnionParam{}
+	if params.UseTools {
+		tools = deepSeekTools
 	}
 
 	for {
 		resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 			Model:    getModel(ctx),
 			Messages: messages,
-			Tools:    deepSeekTools,
+			Tools:    tools,
 		})
 		if err != nil {
 			if strings.Contains(err.Error(), "billing") {

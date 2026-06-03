@@ -27,7 +27,11 @@ func Handle(params responder.Responder) error {
 		return fmt.Errorf("getSystemOverride: %w", err)
 	}
 
-	kind, err := ai.Complete(ctx, RoutingPrompt, msg)
+	kind, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: RoutingPrompt,
+		UserPrompt:   msg,
+		UseTools:     false,
+	})
 	if err != nil {
 		return err
 	}
@@ -54,7 +58,11 @@ func Handle(params responder.Responder) error {
 		}
 	}
 
-	response, err := ai.Complete(ctx, systemPrompt, msg)
+	response, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: systemPrompt,
+		UserPrompt:   msg,
+		UseTools:     true,
+	})
 	if err != nil {
 		return err
 	}
@@ -110,4 +118,4 @@ func GetSystemOverride(ctx context.Context) (string, error) {
 	return cfg.Value, nil
 }
 
-const RoutingPrompt = "Without making any tool calls, categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."
+const RoutingPrompt = "Categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."

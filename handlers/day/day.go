@@ -78,13 +78,17 @@ func getEvent(day string) (string, error) {
 	return event, nil
 }
 
+var fetchURL = func(day string) string {
+	return fmt.Sprintf("https://www.daysoftheyear.com/days/%s", day)
+}
+
 func fetchDayEvents(day string) (*stack, error) {
 	// daysoftheyear website uses 3 day months, except for september:
 	// jan,feb,mar,apr,may,jun,jul,aug,sept(!),oct,nov,dec
 	// the format of day argument is mmm/dd, so handle sep/sept special case here
 	day = strings.Replace(day, "sep/", "sept/", 1)
 
-	url := fmt.Sprintf("https://www.daysoftheyear.com/days/%s", day)
+	url := fetchURL(day)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -103,16 +107,16 @@ func fetchDayEvents(day string) (*stack, error) {
 	}
 
 	var events []string
-	doc.Find("body img").Each(func(_ int, s *goquery.Selection) {
-		if alt, exists := s.Attr("alt"); exists && dayWordRe.MatchString(alt) {
-			events = append(events, alt)
+	doc.Find(".card__title a.js-link-target, article a.js-link-target").Each(func(_ int, s *goquery.Selection) {
+		if text := strings.TrimSpace(s.Text()); dayWordRe.MatchString(text) {
+			events = append(events, text)
 		}
 	})
 
 	return &stack{items: events}, nil
 }
 
-var dayWordRe = regexp.MustCompile(`\bDay\b`)
+var dayWordRe = regexp.MustCompile(`(?i)\bday\b`)
 
 // TODO: this shouldn't be here
 func Image(params responder.Responder) error {

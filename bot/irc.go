@@ -449,10 +449,10 @@ func (bot *Bot) greetNewUser(ctx context.Context, channel string, nick string) e
 	time.Sleep(3 * time.Second)
 
 	ctx = ai.WithDiagFunc(ctx, func(s string) { bot.Diagf("%s", s) })
-	greeting, err := ai.Complete(ctx,
-		"You are a friendly IRC bot. Generate a short, casual welcome message for a new user joining an IRC channel for the first time. One sentence only. Address the user by their nick. Be warm but not over the top. No punctuation and no emojis.",
-		fmt.Sprintf("A user named %s just joined the channel for the first time. Welcome them!", nick),
-	)
+	greeting, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: "You are a friendly IRC bot. Generate a short, casual welcome message for a new user joining an IRC channel for the first time. One sentence only. Address the user by their nick. Be warm but not over the top. No punctuation and no emojis.",
+		UserPrompt:   fmt.Sprintf("A user named %s just joined the channel for the first time. Welcome them!", nick),
+	})
 	if err != nil {
 		return fmt.Errorf("ai.Complete: %w", err)
 	}

@@ -210,6 +210,13 @@ on conflict(channel, nick) do update set updated_at = current_timestamp, present
 				}
 			}()
 
+			go func() {
+				err := bot.greetNewUser(context.TODO(), channel, e.Nick)
+				if err != nil {
+					slog.Warn("greetNewUser", "err", err)
+				}
+			}()
+
 			// trigger NAMES to update the list of joined nicks
 			bot.Conn.SendRawf("NAMES %s", channel)
 		} else {
@@ -421,6 +428,37 @@ func (bot *Bot) RunHandlers(e *irc.Event) {
 
 func isAltNick(nick string) bool {
 	return strings.HasSuffix(nick, "`") || strings.HasSuffix(nick, "_")
+}
+
+func (bot *Bot) greetNewUser(ctx context.Context, channel string, nick string) error {
+	if isAltNick(nick) {
+		return nil
+	}
+
+	q := model.New(db.DB)
+	_, err := q.ChannelNick(ctx, model.ChannelNickParams{Nick: nick, Channel: channel, Present: false})
+	if err == nil {
+		// nick has been seen before, don't greet
+		return nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("ChannelNick: %w", err)
+	}
+
+	// First time seeing this nick
+	time.Sleep(3 * time.Second)
+
+	ctx = ai.WithDiagFunc(ctx, func(s string) { bot.Diagf("%s", s) })
+	greeting, err := ai.Complete(ctx,
+		"You are a friendly IRC bot. Generate a short, casual welcome message for a new user joining an IRC channel for the first time. One sentence only. Address the user by their nick. Be warm but not over the top. No punctuation and no emojis.",
+		fmt.Sprintf("A user named %s just joined the channel for the first time. Welcome them!", nick),
+	)
+	if err != nil {
+		return fmt.Errorf("ai.Complete: %w", err)
+	}
+
+	bot.MakePrivmsgf()(channel, "%s", greeting)
+	return nil
 }
 
 func (bot *Bot) SendMissed(ctx context.Context, channel string, nick string) error {

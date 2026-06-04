@@ -231,6 +231,7 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 			if strings.Contains(err.Error(), "billing") {
 				return "", ErrBilling
 			}
+			diagFn("ERR " + err.Error())
 			return "", fmt.Errorf("chat completion failed: %w", err)
 		}
 
@@ -251,6 +252,7 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 			for _, call := range msg.ToolCalls {
 				result, err := handleDeepSeekTool(ctx, call.Function.Name, call.Function.Arguments)
 				if err != nil {
+					diagFn("ERR " + err.Error())
 					return "", err
 				}
 				diagFn(fmt.Sprintf("TOOL %s -> %s", call.Function.Name, result))

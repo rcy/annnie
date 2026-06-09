@@ -255,7 +255,7 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 					diagFn("ERR " + err.Error())
 					return "", err
 				}
-				diagFn(fmt.Sprintf("TOOL %s -> %s", call.Function.Name, result))
+				diagFn(fmt.Sprintf("TOOL %s(%v) -> %s", call.Function.Name, call.Function.Arguments, result))
 				messages = append(messages, openai.ToolMessage(result, call.ID))
 			}
 			continue

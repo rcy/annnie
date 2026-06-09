@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+    <head>
+      <title>xkcd #{{.Num}}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <h1>{{.Title}}</h1>
+        <p>{{.DateFormatted}} <a href="https://xkcd.com/{{.Num}}">#{{.Num}}</a></p>
+        <img src="{{.Img}}" title="{{.Alt}}" alt="{{.Alt}}" style="max-width:100%">
+    </body>
+</html>

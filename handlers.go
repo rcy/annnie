@@ -26,6 +26,7 @@ import (
 	"goirc/handlers/tip"
 	"goirc/handlers/tz"
 	"goirc/handlers/weather"
+	"goirc/handlers/xkcd"
 	"goirc/internal/ai"
 	"goirc/internal/responder"
 	db "goirc/model"
@@ -86,6 +87,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)
+	b.Handle(`^!xkcd\b`, xkcd.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)
 
 	b.Repeat(10*time.Second, handlers.DoRemind)

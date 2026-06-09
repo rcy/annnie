@@ -11,6 +11,7 @@ import (
 	"goirc/db/model"
 	"goirc/events"
 	"goirc/handlers/annie"
+	"goirc/handlers/xkcd"
 	"goirc/image"
 	"goirc/internal/idstr"
 	"goirc/internal/responder"
@@ -48,6 +49,9 @@ var loginTemplate string
 
 //go:embed "templates/note.gohtml"
 var noteTemplate string
+
+//go:embed "templates/xkcd.gohtml"
+var xkcdTemplate string
 
 //go:embed "templates/rss.gohtml"
 var rssTemplate string
@@ -469,6 +473,32 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			}
 
 			http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
+		})
+
+		r.Get("/xkcd/{id}", func(w http.ResponseWriter, r *http.Request) {
+			id, err := strconv.Atoi(chi.URLParam(r, "id"))
+			if err != nil {
+				http.Error(w, "invalid comic number", http.StatusBadRequest)
+				return
+			}
+
+			comic, err := xkcd.FetchComic(id)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+
+			tmpl, err := template.New("name").Parse(xkcdTemplate)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			err = tmpl.Execute(w, comic)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		})
 
 		r.Get("/rss.xml", func(w http.ResponseWriter, r *http.Request) {

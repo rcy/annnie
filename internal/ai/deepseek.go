@@ -68,7 +68,7 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 	}),
 	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
 		Name:        "get_sports_scores",
-		Description: openai.String("Returns current scores for a sports league. Supported leagues: nfl, nba, mlb, nhl, mls."),
+		Description: openai.String("Returns scores for a sports league on a given date (YYYYMMDD). Supported leagues: nfl, nba, mlb, nhl, mls."),
 		Parameters: openai.FunctionParameters{
 			"type": "object",
 			"properties": map[string]any{
@@ -77,8 +77,12 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 					"description": "The sports league, e.g. nfl, nba, mlb, nhl, mls",
 					"enum":        []string{"nfl", "nba", "mlb", "nhl", "mls"},
 				},
+				"date": map[string]any{
+					"type":        "string",
+					"description": "The date in YYYYMMDD format, e.g. 20260609",
+				},
 			},
-			"required": []string{"league"},
+			"required": []string{"league", "date"},
 		},
 	}),
 }
@@ -91,13 +95,18 @@ var espnLeagues = map[string]string{
 	"mls": "soccer/usa.1",
 }
 
-func getSportsScores(ctx context.Context, league string) (string, error) {
+func getSportsScores(ctx context.Context, league string, date string) (string, error) {
 	path, ok := espnLeagues[league]
 	if !ok {
 		return "", fmt.Errorf("unknown league: %s", league)
 	}
 
 	url := "https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard"
+	if date == "" {
+		return "", fmt.Errorf("date missing")
+	}
+	url += "?dates=" + date
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
@@ -121,6 +130,7 @@ func getSportsScores(ctx context.Context, league string) (string, error) {
 			Status    struct {
 				Type struct {
 					Description string `json:"description"`
+					ShortDetail string `json:"shortDetail"`
 					Completed   bool   `json:"completed"`
 				} `json:"type"`
 				DisplayClock string `json:"displayClock"`
@@ -149,8 +159,12 @@ func getSportsScores(ctx context.Context, league string) (string, error) {
 	var lines []string
 	for _, event := range result.Events {
 		status := event.Status.Type.Description
-		if !event.Status.Type.Completed && event.Status.DisplayClock != "" {
+		if event.Status.Type.Completed {
+			status = "Final"
+		} else if event.Status.Period > 0 && event.Status.DisplayClock != "" {
 			status = fmt.Sprintf("Q%d %s", event.Status.Period, event.Status.DisplayClock)
+		} else if event.Status.Type.ShortDetail != "" {
+			status = event.Status.Type.ShortDetail
 		}
 
 		score := event.ShortName
@@ -182,11 +196,12 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 	case "get_sports_scores":
 		var params struct {
 			League string `json:"league"`
+			Date   string `json:"date"`
 		}
 		if err := json.Unmarshal([]byte(args), &params); err != nil {
 			return "", fmt.Errorf("invalid args: %w", err)
 		}
-		return getSportsScores(ctx, params.League)
+		return getSportsScores(ctx, params.League, params.Date)
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}

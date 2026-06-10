@@ -2,13 +2,18 @@ package ai
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"goirc/db/model"
+	db "goirc/model"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -83,6 +88,20 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 				},
 			},
 			"required": []string{"league", "date"},
+		},
+	}),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "get_nick_timezone",
+		Description: openai.String("Looks up a user's timezone by IRC nick from the database."),
+		Parameters: openai.FunctionParameters{
+			"type": "object",
+			"properties": map[string]any{
+				"nick": map[string]any{
+					"type":        "string",
+					"description": "The IRC nick to look up",
+				},
+			},
+			"required": []string{"nick"},
 		},
 	}),
 }
@@ -202,6 +221,22 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "", fmt.Errorf("invalid args: %w", err)
 		}
 		return getSportsScores(ctx, params.League, params.Date)
+	case "get_nick_timezone":
+		var params struct {
+			Nick string `json:"nick"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		q := model.New(db.DB)
+		tz, err := q.GetNickTimezone(ctx, params.Nick)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return fmt.Sprintf("no timezone set for %s", params.Nick), nil
+			}
+			return "", fmt.Errorf("GetNickTimezone: %w", err)
+		}
+		return tz.Tz, nil
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}

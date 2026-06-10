@@ -60,7 +60,7 @@ func Handle(params responder.Responder) error {
 
 	response, err := ai.Complete(ctx, ai.Params{
 		SystemPrompt: systemPrompt,
-		UserPrompt:   msg,
+		UserPrompt:   fmt.Sprintf("<%s> %s", params.Nick(), msg),
 		UseTools:     true,
 	})
 	if err != nil {

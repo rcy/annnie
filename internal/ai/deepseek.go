@@ -104,6 +104,29 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 			"required": []string{"nick"},
 		},
 	}),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "get_db_schema",
+		Description: openai.String("Returns the full database schema: all tables, their columns, types, and whether nullable."),
+		Parameters: openai.FunctionParameters{
+			"type":       "object",
+			"properties": map[string]any{},
+			"required":   []string{},
+		},
+	}),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "execute_sql",
+		Description: openai.String("Execute a read-only SQL query against the SQLite database and return results as JSON. Only SELECT queries are allowed. Use get_db_schema first to see available tables and columns."),
+		Parameters: openai.FunctionParameters{
+			"type": "object",
+			"properties": map[string]any{
+				"query": map[string]any{
+					"type":        "string",
+					"description": "The SQL query to execute (SELECT only).",
+				},
+			},
+			"required": []string{"query"},
+		},
+	}),
 }
 
 var espnLeagues = map[string]string{
@@ -208,6 +231,92 @@ func getSportsScores(ctx context.Context, league string, date string) (string, e
 	return strings.Join(lines, "\n"), nil
 }
 
+func getDBSchema(ctx context.Context) (string, error) {
+	rows, err := db.DB.QueryxContext(ctx, `
+		select m.name as table_name, p.name as column_name, p.type as column_type, p."notnull" as not_null, p.pk as primary_key
+		from sqlite_master m
+		join pragma_table_info(m.name) p
+		where m.type = 'table'
+		order by m.name, p.cid
+	`)
+	if err != nil {
+		return "", fmt.Errorf("schema query failed: %w", err)
+	}
+	defer rows.Close()
+
+	type colInfo struct {
+		TableName  string `db:"table_name"`
+		ColumnName string `db:"column_name"`
+		ColumnType string `db:"column_type"`
+		NotNull    int    `db:"not_null"`
+		PrimaryKey int    `db:"primary_key"`
+	}
+
+	schema := make(map[string][]string)
+	for rows.Next() {
+		var c colInfo
+		if err := rows.StructScan(&c); err != nil {
+			return "", fmt.Errorf("scan failed: %w", err)
+		}
+		def := c.ColumnName + " " + c.ColumnType
+		if c.PrimaryKey > 0 {
+			def += " PK"
+		}
+		if c.NotNull > 0 {
+			def += " NOT NULL"
+		}
+		schema[c.TableName] = append(schema[c.TableName], def)
+	}
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("rows iteration failed: %w", err)
+	}
+
+	var lines []string
+	for name, cols := range schema {
+		lines = append(lines, fmt.Sprintf("CREATE TABLE %s (", name))
+		for _, c := range cols {
+			lines = append(lines, fmt.Sprintf("  %s,", c))
+		}
+		lines = append(lines, ")")
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+func executeSQL(ctx context.Context, query string) (string, error) {
+	upper := strings.TrimSpace(strings.ToUpper(query))
+	if !strings.HasPrefix(upper, "SELECT") {
+		return "", fmt.Errorf("only SELECT queries are allowed")
+	}
+
+	rows, err := db.DB.QueryxContext(ctx, query)
+	if err != nil {
+		return "", fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var results []map[string]any
+	for rows.Next() {
+		row := make(map[string]any)
+		if err := rows.MapScan(row); err != nil {
+			return "", fmt.Errorf("row scan failed: %w", err)
+		}
+		results = append(results, row)
+	}
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("rows iteration failed: %w", err)
+	}
+
+	if results == nil {
+		return "0 rows returned", nil
+	}
+
+	out, err := json.Marshal(results)
+	if err != nil {
+		return "", fmt.Errorf("json marshal failed: %w", err)
+	}
+	return string(out), nil
+}
+
 func handleDeepSeekTool(ctx context.Context, name string, args string) (string, error) {
 	switch name {
 	case "get_current_time":
@@ -237,6 +346,16 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "", fmt.Errorf("GetNickTimezone: %w", err)
 		}
 		return tz.Tz, nil
+	case "get_db_schema":
+		return getDBSchema(ctx)
+	case "execute_sql":
+		var params struct {
+			Query string `json:"query"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		return executeSQL(ctx, params.Query)
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}
@@ -305,7 +424,12 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 					diagFn("ERR " + err.Error())
 					return "", err
 				}
-				diagFn(fmt.Sprintf("TOOL %s(%v) -> %s", call.Function.Name, call.Function.Arguments, result))
+				arguments := ""
+				if call.Function.Name != "get_db_schema" { // don't output the schema to diag
+					arguments = call.Function.Arguments
+				}
+				diagFn(fmt.Sprintf("TOOL %s(%v) -> %s", call.Function.Name, arguments, result))
+
 				messages = append(messages, openai.ToolMessage(result, call.ID))
 			}
 			continue

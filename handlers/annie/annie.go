@@ -18,7 +18,7 @@ func Handle(params responder.Responder) error {
 	if len(params.Matches()) < 2 {
 		return nil
 	}
-	msg := strings.TrimSpace(params.Matches()[1])
+	msg := strings.TrimSpace(params.Matches()[0])
 
 	q := model.New(db.DB.DB)
 

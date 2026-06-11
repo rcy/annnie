@@ -34,29 +34,50 @@ func getState() *lua.LState {
 func Handle(params responder.Responder) error {
 	code := params.Match(1)
 
-	mu.Lock()
-	defer mu.Unlock()
-
 	if code == "reset" {
+		mu.Lock()
 		if state != nil {
 			state.Close()
 			state = nil
 		}
+		mu.Unlock()
 		params.Privmsgf(params.Target(), "lua state reset")
 		return nil
 	}
 
+	result := Eval(code)
+	params.Privmsgf(params.Target(), "%s", truncateForIRC(result))
+	return nil
+}
+
+func truncateForIRC(out string) string {
+	firstLine, rest, _ := strings.Cut(out, "\n")
+	var suffix string
+	if rest != "" {
+		n := strings.Count(rest, "\n") + 1
+		suffix = fmt.Sprintf(" [%d more lines...]", n)
+	}
+	if len(firstLine) > 420 {
+		truncated := len(firstLine) - 420
+		firstLine = firstLine[:420]
+		charsSuffix := fmt.Sprintf(" [%d more chars]", truncated)
+		suffix = charsSuffix + suffix
+	}
+	return firstLine + suffix
+}
+
+func Eval(code string) string {
+	mu.Lock()
+	defer mu.Unlock()
+
 	outBuf.Reset()
 	L := getState()
 
-	// compile as return expression first; if that fails with a syntax
-	// error, recompile as a plain statement. avoids double-execution:
-	// runtime errors from the return-wrapped attempt are surfaced directly.
 	returnFn, err := L.LoadString("return " + code)
 	if err == nil {
 		L.Push(returnFn)
 		if err := L.PCall(0, lua.MultRet, nil); err != nil {
-			return fmt.Errorf("lua error: %s", err)
+			return fmt.Sprintf("lua error: %s", err)
 		}
 		if L.GetTop() > 0 {
 			n := L.GetTop()
@@ -71,30 +92,15 @@ func Handle(params responder.Responder) error {
 		}
 	} else {
 		if err2 := L.DoString(code); err2 != nil {
-			return fmt.Errorf("lua error: %s", err2)
+			return fmt.Sprintf("lua error: %s", err2)
 		}
 	}
 
 	out := strings.TrimSpace(outBuf.String())
 	if out == "" {
-		params.Privmsgf(params.Target(), "nil")
-		return nil
+		return "nil"
 	}
-
-	firstLine, rest, _ := strings.Cut(out, "\n")
-	var suffix string
-	if rest != "" {
-		n := strings.Count(rest, "\n") + 1
-		suffix = fmt.Sprintf(" [%d more lines...]", n)
-	}
-	if len(firstLine) > 420 {
-		truncated := len(firstLine) - 420
-		firstLine = firstLine[:420]
-		charsSuffix := fmt.Sprintf(" [%d more chars]", truncated)
-		suffix = charsSuffix + suffix
-	}
-	params.Privmsgf(params.Target(), "%s%s", firstLine, suffix)
-	return nil
+	return out
 }
 
 func setupPrint(L *lua.LState) {

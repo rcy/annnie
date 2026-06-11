@@ -14,6 +14,7 @@ import (
 
 	"goirc/db/model"
 	db "goirc/model"
+	"goirc/handlers/lua"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -125,6 +126,20 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 				},
 			},
 			"required": []string{"query"},
+		},
+	}),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "execute_lua",
+		Description: openai.String("Execute Lua code in a persistent sandbox and return the output. Use this to test Lua functions you write. The state persists between calls (functions and variables carry over). Available: print(...), http.get(url), http.json(url)."),
+		Parameters: openai.FunctionParameters{
+			"type": "object",
+			"properties": map[string]any{
+				"code": map[string]any{
+					"type":        "string",
+					"description": "The Lua code to execute.",
+				},
+			},
+			"required": []string{"code"},
 		},
 	}),
 }
@@ -356,6 +371,14 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "", fmt.Errorf("invalid args: %w", err)
 		}
 		return executeSQL(ctx, params.Query)
+	case "execute_lua":
+		var params struct {
+			Code string `json:"code"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		return lua.Eval(params.Code), nil
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}

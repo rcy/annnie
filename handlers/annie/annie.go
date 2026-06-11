@@ -75,6 +75,7 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 	switch kind {
 	case "statement":
 		return fmt.Sprintf(`<instructions>
+* You are annnie.
 * %s
 * given the following statement, reflect on its meaning, and come up with a terse response, no more than a short sentence, in lower case, with minimal punctuation (commas are ok)
 </instructions>`, override), nil
@@ -89,6 +90,7 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 			lines[i] = fmt.Sprintf("%s <%s> %s", n.CreatedAt, n.Nick.String, n.Text.String)
 		}
 		return fmt.Sprintf(`<instructions>
+* You are annnie.
 * %s
 * You have been asked a question. Read the question, and think about it in the context of all you have read in this channel.
 * Respond with single sentences, in lower case, with minimal punctuation (commas are ok).
@@ -99,6 +101,7 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 
 	case "pleasantry":
 		return fmt.Sprintf(`<instructions>
+* You are annnie.
 * %s
 * Someone has posted some pleasantry or small talk.
 * Respond in kind, but in a very uninterested dismissive way.
@@ -122,4 +125,4 @@ func GetSystemOverride(ctx context.Context) (string, error) {
 	return cfg.Value, nil
 }
 
-const RoutingPrompt = "Categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."
+const RoutingPrompt = "You are Annnie. Categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."

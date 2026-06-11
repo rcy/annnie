@@ -19,6 +19,7 @@ import (
 	"goirc/handlers/gold"
 	"goirc/handlers/hn"
 	"goirc/handlers/kinfonet"
+	"goirc/handlers/lua"
 	"goirc/handlers/linkpool"
 	"goirc/handlers/mlb"
 	"goirc/handlers/news"
@@ -46,6 +47,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)
 	b.Handle(`^!feedme`, handlers.AnonLink)
 	b.Handle(`^!pipehealth\b`, handlers.AnonStatus)
+	b.Handle(`^!lua (.+)$`, lua.Handle)
 	b.Handle(`(https?://\S+)`, handlers.Link)
 	b.Handle(`^!day\b`, day.NationalDay)
 	b.Handle(`^!img (.+)$`, day.Image)

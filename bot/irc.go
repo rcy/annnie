@@ -421,6 +421,7 @@ func (bot *Bot) RunHandlers(e *irc.Event) {
 				bot.MakePrivmsgf()(target, "error: %s", msg)
 				return
 			}
+			return
 		}
 	}
 	bot.LastEvent = e

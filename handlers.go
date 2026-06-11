@@ -42,6 +42,9 @@ import (
 func addHandlers(b *bot.Bot) {
 	nick := regexp.QuoteMeta(b.Conn.GetNick())
 
+	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, nick), annie.Handle)
+	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, nick), annie.Handle)
+
 	b.Handle(`^!catchup`, handlers.Catchup)
 	b.Handle(`^,(.+)$`, handlers.CreateNote)
 	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)
@@ -75,8 +78,6 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!auth$`, web.HandleAuth)
 	b.Handle(`^!deauth$`, web.HandleDeauth)
 	b.Handle(`night`, bedtime.Handle)
-	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, nick), annie.Handle)
-	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, nick), annie.Handle)
 	b.Handle(`^!bible (.+)$`, bible.Handle)
 	b.Handle(`^tip$`, tip.Handle)
 	b.Handle(`^date$`, ddate.Handle)

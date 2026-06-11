@@ -424,11 +424,11 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 					diagFn("ERR " + err.Error())
 					return "", err
 				}
-				arguments := ""
+				diagResult := ""
 				if call.Function.Name != "get_db_schema" { // don't output the schema to diag
-					arguments = call.Function.Arguments
+					diagResult = result
 				}
-				diagFn(fmt.Sprintf("TOOL %s(%v) -> %s", call.Function.Name, arguments, result))
+				diagFn(fmt.Sprintf("TOOL %s(%v) -> %s", call.Function.Name, call.Function.Arguments, diagResult))
 
 				messages = append(messages, openai.ToolMessage(result, call.ID))
 			}

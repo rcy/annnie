@@ -342,11 +342,34 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				return
 			}
 			Table(
-				THead(Tr(Th(Text("Key")), Th(Text("Value")), Th(Text("Nick")))),
+				THead(Tr(Th(Text("Key")), Th(Text("Nick")), Th(Text("Value")))),
 				TBody(
 					Map(configs, func(c model.Config) Node {
-						return Tr(Td(Text(c.Key)), Td(Text(c.Value)), Td(Text(c.Nick)))
+						return Tr(
+							Td(A(Href("/configs/"+c.Key), Text(c.Key))),
+							Td(Text(c.Nick)),
+							Td(Text(c.Value)),
+						)
 					}),
+				),
+			).Render(w)
+		})
+
+		r.Get("/configs/{key}", func(w http.ResponseWriter, r *http.Request) {
+			key := chi.URLParam(r, "key")
+			cfg, err := q.GetConfig(r.Context(), key)
+			if errors.Is(err, sql.ErrNoRows) {
+				http.NotFound(w, r)
+				return
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			HTML(
+				Body(
+					El("h1", Text(cfg.Key)),
+					El("pre", Text(cfg.Value)),
 				),
 			).Render(w)
 		})

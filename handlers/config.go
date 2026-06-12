@@ -1,24 +1,21 @@
 package handlers
 
 import (
-	"context"
-	"goirc/db/model"
+	"goirc/configs"
 	"goirc/internal/responder"
-	db "goirc/model"
 	"strings"
 )
 
 func GetConfig(params responder.Responder) error {
 	key := params.Match(1)
 
-	q := model.New(db.DB)
-	cfg, err := q.GetConfig(context.TODO(), key)
+	value, err := configs.GetLiteral(key)
 	if err != nil {
 		params.Privmsgf(params.Target(), "%s: %s not found", params.Nick(), key)
 		return nil
 	}
 
-	params.Privmsgf(params.Target(), "%s: %s = %s", params.Nick(), cfg.Key, cfg.Value)
+	params.Privmsgf(params.Target(), "%s: %s = %s", params.Nick(), key, value)
 	return nil
 }
 
@@ -26,32 +23,22 @@ func SetConfig(params responder.Responder) error {
 	key := params.Match(1)
 	value := params.Match(2)
 
-	q := model.New(db.DB)
-	ctx := context.TODO()
-
 	if strings.HasPrefix(value, "$") {
-		refKey := value[1:]
-		ref, err := q.GetConfig(ctx, refKey)
+		ref, err := configs.GetLiteral(value[1:])
 		if err != nil {
-			params.Privmsgf(params.Target(), "%s: %s is not set", params.Nick(), refKey)
+			params.Privmsgf(params.Target(), "%s: %s is not set", params.Nick(), value[1:])
 			return nil
 		}
-		value = ref.Value
+		value = ref
 	}
 
-	prev, err := q.GetConfig(ctx, key)
-
-	err = q.SetConfig(ctx, model.SetConfigParams{
-		Key:   key,
-		Value: value,
-		Nick:  params.Nick(),
-	})
+	prev, err := configs.Set(key, value, params.Nick())
 	if err != nil {
 		return err
 	}
 
-	if prev.Value != "" {
-		params.Privmsgf(params.Target(), "%s: %s = %s (was %s)", params.Nick(), key, value, prev.Value)
+	if prev != "" {
+		params.Privmsgf(params.Target(), "%s: %s = %s (was %s)", params.Nick(), key, value, prev)
 	} else {
 		params.Privmsgf(params.Target(), "%s: %s = %s", params.Nick(), key, value)
 	}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"goirc/configs"
 	"goirc/db/model"
 	"goirc/internal/ai"
 	"goirc/internal/responder"
@@ -115,14 +116,14 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 }
 
 func GetSystemOverride(ctx context.Context) (string, error) {
-	cfg, err := model.New(db.DB.DB).GetConfig(ctx, "system")
+	value, err := configs.Get("system")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		}
 		return "", fmt.Errorf("GetConfig: %w", err)
 	}
-	return cfg.Value, nil
+	return value, nil
 }
 
 const RoutingPrompt = "You are Annnie. Categorize the following input into statements, questions, or pleasantries. Questions include direct questions and requests for information or action. If it is a statement, reply with the one word 'statement'. If it is a question or request for information or action, reply with 'question'. If it is a pleasantry, reply with 'pleasantry'.  Reply with exactly one of these words, nothing else."

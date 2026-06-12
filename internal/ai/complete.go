@@ -3,8 +3,8 @@ package ai
 import (
 	"context"
 	"errors"
-
-	"goirc/configs"
+	"goirc/db/model"
+	db "goirc/model"
 
 	"github.com/openai/openai-go/v3"
 )
@@ -27,9 +27,10 @@ func diagFuncFromContext(ctx context.Context) func(string) {
 }
 
 func getModel(ctx context.Context) string {
-	value, err := configs.Get("model")
-	if err != nil || value == "" {
+	q := model.New(db.DB.DB)
+	cfg, err := q.GetConfig(ctx, "model")
+	if err != nil || cfg.Value == "" {
 		return string(openai.ChatModelGPT5_4Mini)
 	}
-	return value
+	return cfg.Value
 }

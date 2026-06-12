@@ -13,6 +13,7 @@ import (
 	"goirc/handlers/bible"
 	"goirc/handlers/bsky"
 	"goirc/handlers/bug"
+	"goirc/handlers/code"
 	"goirc/handlers/day"
 	"goirc/handlers/ddate"
 	"goirc/handlers/epigram"
@@ -45,6 +46,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, nick), annie.Handle)
 	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, nick), annie.Handle)
 
+	b.Handle(`^!code (.+)$`, code.Handle)
 	b.Handle(`^!catchup`, handlers.Catchup)
 	b.Handle(`^,(.+)$`, handlers.CreateNote)
 	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)

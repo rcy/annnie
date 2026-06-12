@@ -130,7 +130,7 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 	}),
 	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
 		Name:        "execute_lua",
-		Description: openai.String("Execute Lua code in a persistent sandbox and return the output. Use this to test Lua functions you write. The state persists between calls (functions and variables carry over). Available: print(...), http.get(url), http.json(url)."),
+		Description: openai.String("Execute Lua code in a persistent sandbox and return the output. Available: print(...), http.get(url), http.json(url)."),
 		Parameters: openai.FunctionParameters{
 			"type": "object",
 			"properties": map[string]any{
@@ -379,6 +379,23 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "", fmt.Errorf("invalid args: %w", err)
 		}
 		return lua.Eval(params.Code), nil
+	case "save_lua_script":
+		var params struct {
+			Code string `json:"code"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		if err := lua.SaveScript(params.Code); err != nil {
+			return "", err
+		}
+		return "lua script saved and loaded", nil
+	case "view_lua_script":
+		code := lua.GetScript()
+		if code == "" {
+			return "(no lua script persisted yet)", nil
+		}
+		return code, nil
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}
@@ -388,6 +405,7 @@ type Params struct {
 	SystemPrompt string
 	UserPrompt   string
 	UseTools     bool
+	Tools        []openai.ChatCompletionToolUnionParam
 }
 
 func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
@@ -408,8 +426,8 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 		openai.UserMessage(params.UserPrompt),
 	}
 
-	tools := []openai.ChatCompletionToolUnionParam{}
-	if params.UseTools {
+	tools := params.Tools
+	if params.UseTools && tools == nil {
 		tools = deepSeekTools
 	}
 

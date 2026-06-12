@@ -2,10 +2,16 @@ package lua
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"goirc/db/model"
 	"goirc/internal/responder"
+	db "goirc/model"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -27,6 +33,11 @@ func getState() *lua.LState {
 		state = lua.NewState()
 		setupPrint(state)
 		setupHTTP(state)
+		if code := getScriptFromDB(); code != "" {
+			if err := state.DoString(code); err != nil {
+				slog.Warn("lua: failed to load script from db", "err", err)
+			}
+		}
 	}
 	return state
 }
@@ -35,12 +46,7 @@ func Handle(params responder.Responder) error {
 	code := params.Match(1)
 
 	if code == "reset" {
-		mu.Lock()
-		if state != nil {
-			state.Close()
-			state = nil
-		}
-		mu.Unlock()
+		Reset()
 		params.Privmsgf(params.Target(), "lua state reset")
 		return nil
 	}
@@ -202,4 +208,77 @@ func goToLua(L *lua.LState, v interface{}) lua.LValue {
 	default:
 		return lua.LNil
 	}
+}
+
+func getScriptFromDB() string {
+	q := model.New(db.DB.DB)
+	cfg, err := q.GetConfig(context.TODO(), "lua_script")
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			slog.Warn("lua: GetConfig", "err", err)
+		}
+		return ""
+	}
+	return cfg.Value
+}
+
+func saveScriptToDB(code string) error {
+	q := model.New(db.DB.DB)
+	return q.SetConfig(context.TODO(), model.SetConfigParams{
+		Key:   "lua_script",
+		Value: code,
+		Nick:  "annnie",
+	})
+}
+
+// Reset destroys the Lua state and recreates it, reloading the persisted script.
+func Reset() {
+	mu.Lock()
+	defer mu.Unlock()
+	if state != nil {
+		state.Close()
+		state = nil
+	}
+	_ = getState()
+}
+
+// SaveScript persists the given Lua code to the config store and reloads it into the runtime.
+// Returns an error if the code fails to parse or the DB write fails.
+func SaveScript(code string) error {
+	mu.Lock()
+	// Validate by loading into a fresh state first
+	testL := lua.NewState()
+	setupPrint(testL)
+	setupHTTP(testL)
+	err := testL.DoString(code)
+	testL.Close()
+	if err != nil {
+		mu.Unlock()
+		return fmt.Errorf("lua parse error: %w", err)
+	}
+
+	// Persist
+	if err := saveScriptToDB(code); err != nil {
+		mu.Unlock()
+		return fmt.Errorf("save to db: %w", err)
+	}
+
+	// Reload into runtime: reset and load fresh
+	if state != nil {
+		state.Close()
+	}
+	state = lua.NewState()
+	setupPrint(state)
+	setupHTTP(state)
+	if err := state.DoString(code); err != nil {
+		mu.Unlock()
+		return fmt.Errorf("reload error: %w", err)
+	}
+	mu.Unlock()
+	return nil
+}
+
+// GetScript returns the currently persisted Lua script.
+func GetScript() string {
+	return getScriptFromDB()
 }

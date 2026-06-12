@@ -105,20 +105,20 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 			"required": []string{"nick"},
 		},
 	}),
-	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
-		Name:        "execute_lua",
-		Description: openai.String("Execute Lua code in a persistent sandbox and return the output. Available: print(...), http.get(url), http.json(url)."),
-		Parameters: openai.FunctionParameters{
-			"type": "object",
-			"properties": map[string]any{
-				"code": map[string]any{
-					"type":        "string",
-					"description": "The Lua code to execute.",
-				},
-			},
-			"required": []string{"code"},
-		},
-	}),
+	// openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+	// 	Name:        "execute_lua",
+	// 	Description: openai.String("Execute Lua code in a persistent sandbox and return the output. Available: print(...), http.get(url), http.json(url)."),
+	// 	Parameters: openai.FunctionParameters{
+	// 		"type": "object",
+	// 		"properties": map[string]any{
+	// 			"code": map[string]any{
+	// 				"type":        "string",
+	// 				"description": "The Lua code to execute.",
+	// 			},
+	// 		},
+	// 		"required": []string{"code"},
+	// 	},
+	// }),
 }
 
 var espnLeagues = map[string]string{
@@ -222,8 +222,6 @@ func getSportsScores(ctx context.Context, league string, date string) (string, e
 
 	return strings.Join(lines, "\n"), nil
 }
-
-
 
 func handleDeepSeekTool(ctx context.Context, name string, args string) (string, error) {
 	switch name {

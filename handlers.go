@@ -17,11 +17,12 @@ import (
 	"goirc/handlers/day"
 	"goirc/handlers/ddate"
 	"goirc/handlers/epigram"
+	"goirc/handlers/gitx"
 	"goirc/handlers/gold"
 	"goirc/handlers/hn"
 	"goirc/handlers/kinfonet"
-	"goirc/handlers/lua"
 	"goirc/handlers/linkpool"
+	"goirc/handlers/lua"
 	"goirc/handlers/mlb"
 	"goirc/handlers/news"
 	"goirc/handlers/ontyranny"
@@ -90,6 +91,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!set (\S+) (.+)$`, handlers.SetConfig)
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
+	b.Handle(`^!git (.+)$`, gitx.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)
 	b.Handle(`^!xkcd\b`, xkcd.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)

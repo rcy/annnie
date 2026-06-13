@@ -2,12 +2,10 @@ package lua
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"goirc/db/model"
+	"goirc/handlers/gitx"
 	"goirc/internal/responder"
-	db "goirc/model"
 	"io"
 	"net/http"
 	"os"
@@ -218,19 +216,20 @@ func goToLua(L *lua.LState, v interface{}) lua.LValue {
 }
 
 func getScriptFromDB() (string, error) {
-	q := model.New(db.DB.DB)
-	cfg, err := q.GetConfig(context.TODO(), "lua_script")
-	if err != nil {
-		return "", fmt.Errorf("get config lua_script: %w", err)
-	}
-	filename := cfg.Value
-	if filename == "" {
-		return "", fmt.Errorf("lua_script config is empty")
-	}
-	if gitRepo == "" {
+	//q := model.New(db.DB.DB)
+	// cfg, err := q.GetConfig(context.TODO(), "lua_script")
+	// if err != nil {
+	// 	return "", fmt.Errorf("get config lua_script: %w", err)
+	// }
+	// filename := cfg.Value
+	// if filename == "" {
+	// 	return "", fmt.Errorf("lua_script config is empty")
+	// }
+	filename := "script.lua"
+	if gitx.GitRepo == "" {
 		return "", fmt.Errorf("LUA_GIT_REPO not set")
 	}
-	body, err := os.ReadFile(filepath.Join(gitRepo, filename))
+	body, err := os.ReadFile(filepath.Join(gitx.GitRepo, filename))
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", filename, err)
 	}
@@ -256,6 +255,8 @@ func Reset() error {
 // Returns an error if the code fails to parse or the DB write fails.
 func SaveScript(code string) error {
 	mu.Lock()
+	defer mu.Unlock()
+
 	// Validate by loading into a fresh state first
 	testL := lua.NewState()
 	setupPrint(testL)
@@ -263,13 +264,13 @@ func SaveScript(code string) error {
 	err := testL.DoString(code)
 	testL.Close()
 	if err != nil {
-		mu.Unlock()
 		return fmt.Errorf("lua parse error: %w", err)
 	}
 
-	err = commitAndPush(code)
-	if err != nil {
-		return fmt.Errorf("commitAndPush: %w", err)
+	// save script to disk
+	scriptPath := filepath.Join(gitx.GitRepo, "script.lua")
+	if err := os.WriteFile(scriptPath, []byte(code), 0644); err != nil {
+		return fmt.Errorf("write file: %w", err)
 	}
 
 	// Reload into runtime: reset and load fresh
@@ -280,10 +281,8 @@ func SaveScript(code string) error {
 	setupPrint(state)
 	setupHTTP(state)
 	if err := state.DoString(code); err != nil {
-		mu.Unlock()
 		return fmt.Errorf("reload error: %w", err)
 	}
-	mu.Unlock()
 
 	return nil
 }

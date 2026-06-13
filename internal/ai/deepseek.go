@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"goirc/db/model"
-	db "goirc/model"
 	"goirc/handlers/lua"
+	db "goirc/model"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -259,7 +259,11 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 		if err := json.Unmarshal([]byte(args), &params); err != nil {
 			return "", fmt.Errorf("invalid args: %w", err)
 		}
-		return lua.Eval(params.Code), nil
+		result, err := lua.Eval(params.Code)
+		if err != nil {
+			return "", fmt.Errorf("lua.Eval: %w", err)
+		}
+		return result, nil
 	case "save_lua_script":
 		var params struct {
 			Code string `json:"code"`
@@ -272,7 +276,10 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 		}
 		return "lua script saved and loaded", nil
 	case "view_lua_script":
-		code := lua.GetScript()
+		code, err := lua.GetScript()
+		if err != nil {
+			return "", fmt.Errorf("get lua script: %w", err)
+		}
 		if code == "" {
 			return "(no lua script persisted yet)", nil
 		}

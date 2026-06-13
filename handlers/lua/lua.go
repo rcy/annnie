@@ -3,16 +3,15 @@ package lua
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"goirc/db/model"
 	"goirc/internal/responder"
 	db "goirc/model"
 	"io"
-	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -28,18 +27,20 @@ var (
 	outBuf bytes.Buffer
 )
 
-func getState() *lua.LState {
+func getState() (*lua.LState, error) {
 	if state == nil {
 		state = lua.NewState()
 		setupPrint(state)
 		setupHTTP(state)
-		if code := getScriptFromDB(); code != "" {
+		if code, err := getScriptFromDB(); err != nil {
+			return nil, fmt.Errorf("lua: getScriptFromDB: %w", err)
+		} else if code != "" {
 			if err := state.DoString(code); err != nil {
-				slog.Warn("lua: failed to load script from db", "err", err)
+				return nil, fmt.Errorf("lua: DoString: %w", err)
 			}
 		}
 	}
-	return state
+	return state, nil
 }
 
 func Handle(params responder.Responder) error {
@@ -51,7 +52,10 @@ func Handle(params responder.Responder) error {
 		return nil
 	}
 
-	result := Eval(code)
+	result, err := Eval(code)
+	if err != nil {
+		return fmt.Errorf("Eval", err)
+	}
 	params.Privmsgf(params.Target(), "%s", truncateForIRC(result))
 	return nil
 }
@@ -72,18 +76,21 @@ func truncateForIRC(out string) string {
 	return firstLine + suffix
 }
 
-func Eval(code string) string {
+func Eval(code string) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	outBuf.Reset()
-	L := getState()
+	L, err := getState()
+	if err != nil {
+		return "", fmt.Errorf("getState: %w", err)
+	}
 
 	returnFn, err := L.LoadString("return " + code)
 	if err == nil {
 		L.Push(returnFn)
 		if err := L.PCall(0, lua.MultRet, nil); err != nil {
-			return fmt.Sprintf("lua error: %s", err)
+			return "", fmt.Errorf("lua error: %s", err)
 		}
 		if L.GetTop() > 0 {
 			n := L.GetTop()
@@ -98,15 +105,15 @@ func Eval(code string) string {
 		}
 	} else {
 		if err2 := L.DoString(code); err2 != nil {
-			return fmt.Sprintf("lua error: %s", err2)
+			return "", fmt.Errorf("lua error2: %w", err2)
 		}
 	}
 
 	out := strings.TrimSpace(outBuf.String())
 	if out == "" {
-		return "nil"
+		return "nil", nil
 	}
-	return out
+	return out, nil
 }
 
 func setupPrint(L *lua.LState) {
@@ -210,36 +217,39 @@ func goToLua(L *lua.LState, v interface{}) lua.LValue {
 	}
 }
 
-func getScriptFromDB() string {
+func getScriptFromDB() (string, error) {
 	q := model.New(db.DB.DB)
 	cfg, err := q.GetConfig(context.TODO(), "lua_script")
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			slog.Warn("lua: GetConfig", "err", err)
-		}
-		return ""
+		return "", fmt.Errorf("get config lua_script: %w", err)
 	}
-	return cfg.Value
-}
-
-func saveScriptToDB(code string) error {
-	q := model.New(db.DB.DB)
-	return q.SetConfig(context.TODO(), model.SetConfigParams{
-		Key:   "lua_script",
-		Value: code,
-		Nick:  "annnie",
-	})
+	filename := cfg.Value
+	if filename == "" {
+		return "", fmt.Errorf("lua_script config is empty")
+	}
+	if gitRepo == "" {
+		return "", fmt.Errorf("LUA_GIT_REPO not set")
+	}
+	body, err := os.ReadFile(filepath.Join(gitRepo, filename))
+	if err != nil {
+		return "", fmt.Errorf("read %s: %w", filename, err)
+	}
+	return string(body), nil
 }
 
 // Reset destroys the Lua state and recreates it, reloading the persisted script.
-func Reset() {
+func Reset() error {
 	mu.Lock()
 	defer mu.Unlock()
 	if state != nil {
 		state.Close()
 		state = nil
 	}
-	_ = getState()
+	_, err := getState()
+	if err != nil {
+		return fmt.Errorf("getState: %w", err)
+	}
+	return nil
 }
 
 // SaveScript persists the given Lua code to the config store and reloads it into the runtime.
@@ -257,10 +267,9 @@ func SaveScript(code string) error {
 		return fmt.Errorf("lua parse error: %w", err)
 	}
 
-	// Persist
-	if err := saveScriptToDB(code); err != nil {
-		mu.Unlock()
-		return fmt.Errorf("save to db: %w", err)
+	err = commitAndPush(code)
+	if err != nil {
+		return fmt.Errorf("commitAndPush: %w", err)
 	}
 
 	// Reload into runtime: reset and load fresh
@@ -275,10 +284,11 @@ func SaveScript(code string) error {
 		return fmt.Errorf("reload error: %w", err)
 	}
 	mu.Unlock()
+
 	return nil
 }
 
 // GetScript returns the currently persisted Lua script.
-func GetScript() string {
+func GetScript() (string, error) {
 	return getScriptFromDB()
 }

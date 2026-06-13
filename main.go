@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goirc/bot"
 	"goirc/events"
+	"goirc/handlers/lua"
 	db "goirc/model"
 	"goirc/util"
 	"goirc/web"
@@ -28,6 +29,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer es.Close()
+
+	err = lua.CloneOrPull()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	b, err := bot.Connect(
 		es,

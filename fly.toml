@@ -20,8 +20,8 @@ kill_timeout = "5s"
   SQLITE_DB = "/data/annie.db"
   EVOKE_DB = "/data/evoke.db"
   IMAGE_FILE_BASE = "/data/images"
-  LUA_GIT_REPO=./data/annnie-dlc
-  LUA_GIT_REMOTE=https://github.com/rcy/annnie-dlc.git
+  LUA_GIT_REPO = "./data/annnie-dlc"
+  LUA_GIT_REMOTE = "https://github.com/rcy/annnie-dlc.git"
 
 [[mounts]]
   source = "annie_data"

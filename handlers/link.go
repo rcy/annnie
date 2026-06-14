@@ -45,7 +45,7 @@ func Link(params responder.Responder) error {
 			return err
 		}
 
-		params.Privmsgf(params.Target(), "thanks for the link")
+		params.Privmsgf(params.Target(), `thanks for the link: title="%s" description="%s"`, tags.Title.String, tags.Description.String)
 
 		return nil
 	}

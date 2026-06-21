@@ -1,7 +1,6 @@
 package news
 
 import (
-	"context"
 	"fmt"
 	"goirc/internal/responder"
 	"goirc/news"
@@ -15,7 +14,7 @@ func Handle(params responder.Responder) error {
 		topic = params.Match(1)
 	}
 
-	ctx := context.TODO()
+	ctx := params.Context()
 
 	var result string
 	var err error

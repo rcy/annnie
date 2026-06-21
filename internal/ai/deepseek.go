@@ -14,6 +14,7 @@ import (
 
 	"goirc/db/model"
 	"goirc/handlers/lua"
+	"goirc/internal/worldcup"
 	db "goirc/model"
 
 	"github.com/openai/openai-go/v3"
@@ -103,6 +104,20 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 				},
 			},
 			"required": []string{"nick"},
+		},
+	}),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "get_worldcup_next_match",
+		Description: openai.String("Returns the next World Cup match for a given country."),
+		Parameters: openai.FunctionParameters{
+			"type": "object",
+			"properties": map[string]any{
+				"country": map[string]any{
+					"type":        "string",
+					"description": "The country name, TLA code, or substring, e.g. Brazil, BRA, USA",
+				},
+			},
+			"required": []string{"country"},
 		},
 	}),
 	// openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
@@ -252,6 +267,14 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "", fmt.Errorf("GetNickTimezone: %w", err)
 		}
 		return tz.Tz, nil
+	case "get_worldcup_next_match":
+		var params struct {
+			Country string `json:"country"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		return worldcup.NextMatch(params.Country)
 	case "execute_lua":
 		var params struct {
 			Code string `json:"code"`

@@ -24,6 +24,7 @@ import (
 	"goirc/handlers/linkpool"
 	"goirc/handlers/lua"
 	"goirc/handlers/mlb"
+	"goirc/handlers/movie"
 	"goirc/handlers/news"
 	"goirc/handlers/ontyranny"
 	"goirc/handlers/tip"
@@ -72,6 +73,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!k`, kinfonet.TodaysQuoteHandler)
 	b.Handle(`^!gold`, gold.Handle)
 	b.Handle(`^!hn`, hn.Handle)
+	b.Handle(`^!movie (.+)$`, movie.Handle)
 	b.Handle(`^!auth$`, web.HandleAuth)
 	b.Handle(`^!deauth$`, web.HandleDeauth)
 	b.Handle(`^!bible (.+)$`, bible.Handle)

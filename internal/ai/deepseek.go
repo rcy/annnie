@@ -14,6 +14,7 @@ import (
 
 	"goirc/db/model"
 	"goirc/handlers/lua"
+	"goirc/internal/tmdb"
 	"goirc/internal/worldcup"
 	db "goirc/model"
 
@@ -134,6 +135,24 @@ var deepSeekTools = []openai.ChatCompletionToolUnionParam{
 	// 		"required": []string{"code"},
 	// 	},
 	// }),
+	openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+		Name:        "get_movie_info",
+		Description: openai.String("Searches for a movie by title and optional year, returns the top result with rating, release year, and overview."),
+		Parameters: openai.FunctionParameters{
+			"type": "object",
+			"properties": map[string]any{
+				"title": map[string]any{
+					"type":        "string",
+					"description": "The movie title to search for",
+				},
+				"year": map[string]any{
+					"type":        "string",
+					"description": "Optional release year, e.g. 1999",
+				},
+			},
+			"required": []string{"title"},
+		},
+	}),
 }
 
 var espnLeagues = map[string]string{
@@ -307,6 +326,64 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 			return "(no lua script persisted yet)", nil
 		}
 		return code, nil
+	case "get_movie_info":
+		var params struct {
+			Title string `json:"title"`
+			Year  string `json:"year"`
+		}
+		if err := json.Unmarshal([]byte(args), &params); err != nil {
+			return "", fmt.Errorf("invalid args: %w", err)
+		}
+		results, err := tmdb.Search(params.Title, params.Year)
+		if err != nil {
+			return "", fmt.Errorf("tmdb.Search: %w", err)
+		}
+		if len(results) == 0 {
+			return fmt.Sprintf("no results found for %q", params.Title), nil
+		}
+		m := results[0]
+
+		out := fmt.Sprintf("%s (%s) | Rating: %.1f/10 | %s",
+			m.Title, m.ReleaseDate, m.VoteAverage, m.Overview)
+
+		cast, crew, err := tmdb.Credits(m.ID)
+		if err == nil {
+			topCast := cast
+			if len(topCast) > 5 {
+				topCast = topCast[:5]
+			}
+			if len(topCast) > 0 {
+				var parts []string
+				for _, c := range topCast {
+					parts = append(parts, fmt.Sprintf("%s as %s", c.Name, c.Character))
+				}
+				out += "\nCast: " + strings.Join(parts, ", ")
+			}
+
+			keyJobs := []string{"Director", "Screenplay", "Producer", "Writer", "Story"}
+			var shown []string
+			for _, kj := range keyJobs {
+				for _, cm := range crew {
+					if cm.Job == kj {
+						shown = append(shown, fmt.Sprintf("%s (%s)", cm.Name, cm.Job))
+						if len(shown) >= 3 {
+							break
+						}
+					}
+				}
+				if len(shown) >= 3 {
+					break
+				}
+			}
+			if len(shown) > 0 {
+				out += "\n" + strings.Join(shown, ", ")
+			}
+		}
+
+		if len(out) > 1500 {
+			out = out[:1500] + "…"
+		}
+		return out, nil
 	default:
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}

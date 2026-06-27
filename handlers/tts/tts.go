@@ -24,8 +24,8 @@ func Handle(params responder.Responder) error {
 }
 
 func Speak(text string, params responder.Responder) error {
-	if len(text) > 200 {
-		text = text[:200]
+	if len(text) > 420 {
+		text = text[:420]
 	}
 
 	ttsURL := fmt.Sprintf(

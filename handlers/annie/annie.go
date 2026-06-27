@@ -20,11 +20,21 @@ func Handle(params responder.Responder) error {
 	}
 	msg := strings.TrimSpace(params.Matches()[0])
 
+	response, err := Complete(ctx, params, msg)
+	if err != nil {
+		return err
+	}
+
+	params.Privmsgf(params.Target(), "%s: %s", params.Nick(), response)
+	return nil
+}
+
+func Complete(ctx context.Context, params responder.Responder, msg string) (string, error) {
 	q := model.New(db.DB.DB)
 
 	override, err := GetSystemOverride(ctx)
 	if err != nil {
-		return fmt.Errorf("getSystemOverride: %w", err)
+		return "", fmt.Errorf("getSystemOverride: %w", err)
 	}
 
 	kind, err := ai.Complete(ctx, ai.Params{
@@ -33,17 +43,16 @@ func Handle(params responder.Responder) error {
 		UseTools:     false,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	systemPrompt, err := BuildSystemPrompt(ctx, q, kind, override)
 	if err != nil {
-		return fmt.Errorf("buildSystemPrompt: %w", err)
+		return "", fmt.Errorf("buildSystemPrompt: %w", err)
 	}
 
 	if systemPrompt == "" {
-		params.Privmsgf(params.Target(), "%s: [interpreted '%s' as an unknown type: %s]", params.Nick(), msg, kind)
-		return nil
+		return "", fmt.Errorf("unknown type: %s", kind)
 	}
 
 	if kind == "statement" {
@@ -54,7 +63,7 @@ func Handle(params responder.Responder) error {
 			Text:   sql.NullString{String: msg, Valid: true},
 		})
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -64,11 +73,10 @@ func Handle(params responder.Responder) error {
 		UseTools:     true,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
-	params.Privmsgf(params.Target(), "%s: %s", params.Nick(), response)
 
-	return nil
+	return response, nil
 }
 
 func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override string) (string, error) {

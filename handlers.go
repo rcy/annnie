@@ -9,6 +9,7 @@ import (
 	"goirc/db/model"
 	"goirc/handlers"
 	"goirc/handlers/annie"
+	"goirc/handlers/annietts"
 	"goirc/handlers/bedtime"
 	"goirc/handlers/bible"
 	"goirc/handlers/bsky"
@@ -28,6 +29,7 @@ import (
 	"goirc/handlers/news"
 	"goirc/handlers/ontyranny"
 	"goirc/handlers/tip"
+	"goirc/handlers/tts"
 	"goirc/handlers/tz"
 	"goirc/handlers/weather"
 	"goirc/handlers/xkcd"
@@ -47,7 +49,10 @@ func addHandlers(b *bot.Bot) {
 
 	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, nick), annie.Handle)
 	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, nick), annie.Handle)
-
+	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, regexp.QuoteMeta("Annnie")), annietts.Handle)
+	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, regexp.QuoteMeta("Annnie")), annietts.Handle)
+	b.Handle(fmt.Sprintf(`^%s:?(.+)$`, regexp.QuoteMeta("Annie")), annietts.Handle)
+	b.Handle(fmt.Sprintf(`^(.+),? %s.?$`, regexp.QuoteMeta("Annie")), annietts.Handle)
 	b.Handle(`^!code (.+)$`, code.Handle)
 	b.Handle(`^!catchup`, handlers.Catchup)
 	b.Handle(`^!feedme`, handlers.AnonLink)
@@ -85,6 +90,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!set (\S+) (.+)$`, handlers.SetConfig)
 	b.Handle(`^!bug (.+)$`, bug.Handle)
 	b.Handle(`^!bug$`, bug.Handle)
+	b.Handle(`^!tts (.+)$`, tts.Handle)
 	b.Handle(`^!git (.+)$`, gitx.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)
 	b.Handle(`^!xkcd\b`, xkcd.Handle)

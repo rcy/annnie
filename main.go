@@ -6,6 +6,9 @@ import (
 	"goirc/bot"
 	"goirc/events"
 	"goirc/handlers/lua"
+	"goirc/handlers/mcp"
+	"goirc/internal/ai"
+	internalmcp "goirc/internal/mcp"
 	db "goirc/model"
 	"goirc/util"
 	"goirc/web"
@@ -44,6 +47,17 @@ func main() {
 		util.Getenv("SASL_PASSWORD"))
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Initialize MCP client
+	mcpClient, err := internalmcp.FromEnv(context.Background())
+	if err != nil {
+		log.Printf("MCP: %v", err)
+	}
+	if mcpClient != nil {
+		mcp.SetClient(mcpClient)
+		ai.SetMCPClient(mcpClient)
+		log.Printf("MCP: connected to %d tool(s)", len(mcpClient.ListTools()))
 	}
 
 	addHandlers(b)

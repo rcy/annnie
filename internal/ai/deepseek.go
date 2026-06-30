@@ -385,6 +385,16 @@ func handleDeepSeekTool(ctx context.Context, name string, args string) (string, 
 		}
 		return out, nil
 	default:
+		if c := resolveMCPClient(ctx); c != nil {
+			realName := MCPToolRealName(name)
+			if tool := c.FindTool(realName); tool != nil {
+				var argsMap map[string]any
+				if err := json.Unmarshal([]byte(args), &argsMap); err == nil {
+					return c.CallTool(ctx, realName, argsMap)
+				}
+				return c.CallTool(ctx, realName, nil)
+			}
+		}
 		return "", fmt.Errorf("unknown tool: %s", name)
 	}
 }
@@ -417,6 +427,27 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 	tools := params.Tools
 	if params.UseTools && tools == nil {
 		tools = deepSeekTools
+		if c := resolveMCPClient(ctx); c != nil {
+			for _, t := range c.ListTools() {
+				props := t.Input
+				if props == nil {
+					props = map[string]any{}
+				}
+				required := t.Required
+				if required == nil {
+					required = []string{}
+				}
+				tools = append(tools, openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+					Name:        MCPToolName(t.Name),
+					Description: openai.String(t.Help),
+					Parameters: openai.FunctionParameters{
+						"type":       "object",
+						"properties": props,
+						"required":   required,
+					},
+				}))
+			}
+		}
 	}
 
 	for {

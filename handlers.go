@@ -24,6 +24,7 @@ import (
 	"goirc/handlers/kinfonet"
 	"goirc/handlers/linkpool"
 	"goirc/handlers/lua"
+	"goirc/handlers/mcp"
 	"goirc/handlers/mlb"
 	"goirc/handlers/movie"
 	"goirc/handlers/news"
@@ -210,6 +211,7 @@ func addHandlers(b *bot.Bot) {
 		}()
 	})
 
+	b.Handle(`^!mcp\b`, mcp.Handle)
 	b.Handle(`^!help`, func(params responder.Responder) error {
 		params.Privmsgf(params.Target(), "%s: %s", params.Nick(), "https://github.com/rcy/annnie/blob/main/handlers.go")
 		return nil

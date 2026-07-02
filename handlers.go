@@ -30,6 +30,7 @@ import (
 	"goirc/handlers/news"
 	"goirc/handlers/ontyranny"
 	"goirc/handlers/tip"
+	"goirc/handlers/track"
 	"goirc/handlers/tts"
 	"goirc/handlers/tz"
 	"goirc/handlers/weather"
@@ -95,6 +96,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!git (.+)$`, gitx.Handle)
 	b.Handle(`^!ontyranny`, ontyranny.Handle)
 	b.Handle(`^!xkcd\b`, xkcd.Handle)
+	b.Handle(`^!track (.+)$`, track.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)
 
 	b.Handle(`^,(.+)$`, handlers.CreateNote)

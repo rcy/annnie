@@ -9,7 +9,6 @@ import (
 	db "goirc/model"
 	"goirc/model/reminders"
 	"goirc/util"
-	"os"
 	"strings"
 	"time"
 
@@ -22,11 +21,13 @@ func RemindMe(params responder.Responder) error {
 
 	q := model.New(db.DB)
 	nickTimezone, err := q.GetNickTimezone(context.TODO(), params.Nick())
+	var tz string
 	if err != nil {
-		params.Privmsgf(params.Target(), "%s: I don't know your timezone. Visit %s to set it", params.Nick(), os.Getenv("ROOT_URL"))
-		return nil
+		tz = "America/Los_Angeles"
+	} else {
+		tz = nickTimezone.Tz
 	}
-	loc, err := time.LoadLocation(nickTimezone.Tz)
+	loc, err := time.LoadLocation(tz)
 	if err != nil {
 		return err
 	}

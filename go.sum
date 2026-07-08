@@ -121,6 +121,8 @@ github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e h1:ijClszYn+mADRFY17k
 github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e/go.mod h1:boTsfXsheKC2y+lKOCMpSfarhxDeIzfZG1jqGcPl3cA=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
+github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/ianlancetaylor/demangle v0.0.0-20220319035150-800ac71e25c2/go.mod h1:aYm2/VgdVmcIU8iMfdMvDMsRAQjcfZSKFby6HOFvi/w=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
@@ -204,6 +206,8 @@ github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91 h1:akM6MxezntJqKqlCk6Ir
 github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91/go.mod h1:BH4RAoHnfh15xVEd+UDhuPrvI22Eipa3oPMXiJZS5Io=
 github.com/rcy/evoke v0.1.1 h1:0vlPDxtbt7ROh7SiKz7cKL1AgPcBKdj8Gv8pD0gz8x8=
 github.com/rcy/evoke v0.1.1/go.mod h1:hIozgIDP1S5EBFtZGNCY6t2VWexdBH4ffkAFMWOV/Oo=
+github.com/rcy/gopiss v0.69.0 h1:qLtrxPATaFjJVx54opnMlFLQlRrCdv7LVeD0P7RJMec=
+github.com/rcy/gopiss v0.69.0/go.mod h1:OFqpqBoMT2+Vs9fetiv7/mmHeShptpp2ZieaFj0lZ60=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/riza-io/grpc-go v0.2.0 h1:2HxQKFVE7VuYstcJ8zqpN84VnAoJ4dCL6YFhJewNcHQ=

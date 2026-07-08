@@ -20,6 +20,7 @@ require (
 	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91
 	github.com/rcy/evoke v0.1.1
+	github.com/rcy/gopiss v0.69.0
 	github.com/robfig/cron v1.2.0
 	github.com/solafide-dev/gobible v1.1.1
 	github.com/sqids/sqids-go v0.4.1
@@ -66,6 +67,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

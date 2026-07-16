@@ -220,4 +220,6 @@ func addHandlers(b *bot.Bot) {
 		params.Privmsgf(params.Target(), "%s: %s", params.Nick(), "https://github.com/rcy/annnie/blob/main/handlers.go")
 		return nil
 	})
+
+	piss.StartWatcher(context.Background(), b.Channel, b.Conn.Privmsgf)
 }

@@ -20,7 +20,7 @@ require (
 	github.com/rcy/disco v0.2.3
 	github.com/rcy/durfmt v0.0.0-20240102082646-83cc8efdab91
 	github.com/rcy/evoke v0.1.1
-	github.com/rcy/gopiss v0.69.0
+	github.com/rcy/gopiss v0.69.1
 	github.com/robfig/cron v1.2.0
 	github.com/solafide-dev/gobible v1.1.1
 	github.com/sqids/sqids-go v0.4.1

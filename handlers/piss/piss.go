@@ -16,7 +16,7 @@ func Handle(params responder.Responder) error {
 		return fmt.Errorf("couldn't get piss tank level: %w", err)
 	}
 
-	params.Privmsgf(params.Target(), "ISS urine tank level: %.1f%%", level)
+	params.Privmsgf(params.Target(), "the iss urine tank level is at %.0f%%", level)
 	return nil
 }
 
@@ -30,10 +30,16 @@ func StartWatcher(ctx context.Context, target string, privmsgf func(string, stri
 	}
 
 	go func() {
+		var announced bool
+
 		for level := range ch {
-			if level >= 68.5 && level <= 69.5 {
-				privmsgf(target, "the iss urine tank is at %.1f%%", level)
+			inRange := level >= 68.5 && level <= 69.5
+
+			if inRange && !announced {
+				privmsgf(target, "the iss urine tank level is at %.0f%%", level)
 			}
+
+			announced = inRange
 		}
 	}()
 }

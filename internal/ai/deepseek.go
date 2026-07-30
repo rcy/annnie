@@ -457,7 +457,7 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 			Tools:    tools,
 		})
 		if err != nil {
-			if strings.Contains(err.Error(), "billing") {
+			if isBillingError(err) {
 				return "", ErrBilling
 			}
 			diagFn("ERR " + err.Error())

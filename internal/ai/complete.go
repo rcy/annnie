@@ -5,6 +5,7 @@ import (
 	"errors"
 	"goirc/db/model"
 	db "goirc/model"
+	"strings"
 
 	"github.com/openai/openai-go/v3"
 )
@@ -12,6 +13,15 @@ import (
 var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
 var ErrRejected = errors.New("Rejected")
 var Complete = CompleteDeepSeek
+
+// isBillingError checks if an error indicates an account billing issue
+// (insufficient funds, payment required, etc.)
+func isBillingError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "billing") ||
+		strings.Contains(msg, "Insufficient Balance") ||
+		strings.Contains(msg, "insufficient_quota")
+}
 
 type diagFuncKey struct{}
 

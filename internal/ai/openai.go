@@ -3,7 +3,6 @@ package ai
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/openai/openai-go/v3"
 )
@@ -19,7 +18,7 @@ func CompleteOpenAI(ctx context.Context, systemPrompt string, userPrompt string)
 		},
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "billing") {
+		if isBillingError(err) {
 			return "", ErrBilling
 		}
 

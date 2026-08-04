@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"goirc/internal/responder"
 
@@ -30,16 +31,15 @@ func StartWatcher(ctx context.Context, target string, privmsgf func(string, stri
 	}
 
 	go func() {
-		var announced bool
+		var lastAnnounced time.Time
 
 		for level := range ch {
 			inRange := level >= 68.5 && level <= 69.5
 
-			if inRange && !announced {
+			if inRange && time.Since(lastAnnounced) > 15*time.Minute {
 				privmsgf(target, "the iss urine tank level is at %.0f%%", level)
+				lastAnnounced = time.Now()
 			}
-
-			announced = inRange
 		}
 	}()
 }

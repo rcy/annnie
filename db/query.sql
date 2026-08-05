@@ -101,15 +101,6 @@ select * from notes where kind='note' and nick != target order by created_at des
 -- name: NotesAndQuotes :many
 select * from notes where kind='note' or kind='quote' order by created_at desc;
 
--- name: ScheduleFutureMessage :one
-insert into future_messages(kind) values(?) returning *;
-
--- name: ReadyFutureMessage :one
-select * from future_messages where datetime('now') > datetime(created_at, ?) limit 1;
-
--- name: DeleteFutureMessage :exec
-delete from future_messages where id = ?;
-
 -- name: CacheLoad :one
 select * from cache where key = @key;
 

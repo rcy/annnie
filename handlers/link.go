@@ -40,11 +40,6 @@ func Link(params responder.Responder) error {
 	}
 
 	if isAnonymous {
-		_, err = q.ScheduleFutureMessage(context.TODO(), "link")
-		if err != nil {
-			return err
-		}
-
 		params.Privmsgf(params.Target(), `thanks for the link: title="%s" description="%s"`, tags.Title.String, tags.Description.String)
 
 		return nil

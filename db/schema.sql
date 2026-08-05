@@ -62,11 +62,6 @@ CREATE TABLE bedtimes(
   nick text not null,
   message text
 );
-CREATE TABLE future_messages(
-  id integer not null primary key,
-  created_at datetime not null default current_timestamp,
-  kind text not null
-);
 CREATE TABLE cache(
   id integer not null primary key,
   created_at datetime not null default current_timestamp,

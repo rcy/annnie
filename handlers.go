@@ -22,7 +22,6 @@ import (
 	"goirc/handlers/gold"
 	"goirc/handlers/hn"
 	"goirc/handlers/kinfonet"
-	"goirc/handlers/linkpool"
 	"goirc/handlers/lua"
 	"goirc/handlers/mcp"
 	"goirc/handlers/mlb"
@@ -36,10 +35,8 @@ import (
 	"goirc/handlers/tz"
 	"goirc/handlers/weather"
 	"goirc/handlers/xkcd"
-	"goirc/internal/ai"
 	"goirc/internal/responder"
 	db "goirc/model"
-	"goirc/pubsub"
 	"goirc/web"
 	"regexp"
 	"time"
@@ -137,83 +134,7 @@ func addHandlers(b *bot.Bot) {
 		panic(err)
 	}
 
-	err = c.AddFunc("57 * * * * *", func() {
-		ctx := context.TODO()
-		msg, err := q.ReadyFutureMessage(ctx, handlers.FutureMessageInterval)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return
-			}
-			b.Conn.Privmsg(b.Channel, err.Error())
-			return
-		}
-		err = q.DeleteFutureMessage(ctx, msg.ID)
-		if err != nil {
-			b.Conn.Privmsg(b.Channel, err.Error())
-			return
-		}
-
-		// send anonymous note
-		switch msg.Kind {
-		case "link":
-			err = handlers.AnonLink(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
-		case "quote":
-			err = handlers.AnonQuote(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
-		default:
-			b.Conn.Privmsgf(b.Channel, "unhandled msg.Kind: %s", msg.Kind)
-		}
-		if err != nil {
-			if errors.Is(err, ai.ErrBilling) {
-				// the quote was sent, but no generated image, this is fine
-				return
-			}
-			if errors.Is(err, linkpool.NoNoteFoundError) {
-				// didn't find a note, reschedule
-				_, scheduleErr := q.ScheduleFutureMessage(ctx, msg.Kind)
-				if scheduleErr != nil {
-					b.Conn.Privmsg(b.Channel, "error rescheduling: "+scheduleErr.Error())
-				}
-				return
-			}
-			// something else happened, spam the channel
-			b.Conn.Privmsg(b.Channel, "error: "+err.Error())
-		}
-	})
-	if err != nil {
-		panic(err)
-	}
-
 	c.Start()
-
-	pubsub.Subscribe("anonnoteposted", func(note any) {
-		go func() {
-			err := handlers.AnonLink(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
-			if err != nil {
-				if errors.Is(err, ai.ErrBilling) {
-					return
-				}
-				if errors.Is(err, linkpool.NoNoteFoundError) {
-					return
-				}
-				b.Conn.Privmsg(b.Channel, "error: "+err.Error())
-			}
-		}()
-	})
-
-	pubsub.Subscribe("anonquoteposted", func(note any) {
-		go func() {
-			err := handlers.AnonQuote(bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf()))
-			if err != nil {
-				if errors.Is(err, ai.ErrBilling) {
-					return
-				}
-				if errors.Is(err, linkpool.NoNoteFoundError) {
-					return
-				}
-				b.Conn.Privmsg(b.Channel, "error: "+err.Error())
-			}
-		}()
-	})
 
 	b.Handle(`^!mcp\b`, mcp.Handle)
 	b.Handle(`^!help`, func(params responder.Responder) error {

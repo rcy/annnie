@@ -45,12 +45,6 @@ type File struct {
 	Mime      sql.NullString
 }
 
-type FutureMessage struct {
-	ID        int64
-	CreatedAt time.Time
-	Kind      string
-}
-
 type GeneratedImage struct {
 	ID            int64
 	CreatedAt     time.Time

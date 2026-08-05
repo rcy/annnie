@@ -22,6 +22,7 @@ import (
 	"goirc/handlers/gold"
 	"goirc/handlers/hn"
 	"goirc/handlers/kinfonet"
+	"goirc/handlers/linkpool"
 	"goirc/handlers/lua"
 	"goirc/handlers/mcp"
 	"goirc/handlers/mlb"
@@ -142,5 +143,25 @@ func addHandlers(b *bot.Bot) {
 		return nil
 	})
 
-	piss.StartWatcher(context.Background(), b.Channel, b.Conn.Privmsgf)
+	piss.StartWatcher(context.Background(), b.Channel, b.Conn.Privmsgf, func() error {
+		params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
+		if time.Now().UnixNano()%2 == 0 {
+			err := handlers.AnonLink(params)
+			if err != nil {
+				if errors.Is(err, linkpool.NoNoteFoundError) {
+					return handlers.AnonQuote(params)
+				}
+				return err
+			}
+		} else {
+			err := handlers.AnonQuote(params)
+			if err != nil {
+				if errors.Is(err, linkpool.NoNoteFoundError) {
+					return handlers.AnonLink(params)
+				}
+				return err
+			}
+		}
+		return nil
+	})
 }

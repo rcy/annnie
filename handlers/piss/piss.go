@@ -23,7 +23,7 @@ func Handle(params responder.Responder) error {
 
 // StartWatcher connects to the ISS urine tank telemetry and announces
 // when the level is around 69%.
-func StartWatcher(ctx context.Context, target string, privmsgf func(string, string, ...any)) {
+func StartWatcher(ctx context.Context, target string, privmsgf func(string, string, ...any), onPiss69 func() error) {
 	ch, err := gopiss.WatchISSUrineTankLevel(ctx)
 	if err != nil {
 		log.Printf("piss watcher: %v", err)
@@ -37,7 +37,9 @@ func StartWatcher(ctx context.Context, target string, privmsgf func(string, stri
 			inRange := level >= 68.5 && level <= 69.5
 
 			if inRange && time.Since(lastAnnounced) > 15*time.Minute {
-				privmsgf(target, "the iss urine tank level is at %.0f%%", level)
+				if onPiss69 != nil {
+					onPiss69()
+				}
 				lastAnnounced = time.Now()
 			}
 		}

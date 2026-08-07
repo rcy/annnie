@@ -42,6 +42,8 @@ import (
 	"goirc/web"
 	"log"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/robfig/cron"
@@ -145,7 +147,7 @@ func addHandlers(b *bot.Bot) {
 		return nil
 	})
 
-	var lastPiss69 time.Time
+	var lastPissAnnounce time.Time
 
 	pubsub.Subscribe("piss", func(payload any) {
 		level, ok := payload.(int)
@@ -154,9 +156,24 @@ func addHandlers(b *bot.Bot) {
 		}
 		log.Printf("piss tank level: %d%%", level)
 
-		if level == 69 && time.Since(lastPiss69) > 15*time.Minute {
-			lastPiss69 = time.Now()
+		triggers := map[int]bool{69: true}
+		cfg, err := q.GetConfig(context.Background(), "ppp")
+		if err == nil {
+			for _, s := range strings.Split(cfg.Value, ",") {
+				s = strings.TrimSpace(s)
+				if n, err := strconv.Atoi(s); err == nil {
+					triggers[n] = true
+				}
+			}
+		}
+
+		if triggers[level] && time.Since(lastPissAnnounce) > 15*time.Minute {
+			lastPissAnnounce = time.Now()
+
 			params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
+
+			params.Privmsgf(params.Target(), "the iss urine tank level is at %.0f%%", level)
+
 			if time.Now().UnixNano()%2 == 0 {
 				err := handlers.AnonLink(params)
 				if err != nil {

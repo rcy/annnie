@@ -172,7 +172,7 @@ func addHandlers(b *bot.Bot) {
 
 			params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
 
-			params.Privmsgf(params.Target(), "the iss urine tank level is at %.0f%%", level)
+			params.Privmsgf(params.Target(), "the iss urine tank level is at %d%%", level)
 
 			if time.Now().UnixNano()%2 == 0 {
 				err := handlers.AnonLink(params)

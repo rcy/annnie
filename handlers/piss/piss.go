@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"math"
 
 	"goirc/internal/responder"
+	"goirc/pubsub"
 
 	"github.com/rcy/gopiss"
 )
@@ -21,9 +22,9 @@ func Handle(params responder.Responder) error {
 	return nil
 }
 
-// StartWatcher connects to the ISS urine tank telemetry and announces
-// when the level is around 69%.
-func StartWatcher(ctx context.Context, target string, privmsgf func(string, string, ...any), onPiss69 func() error) {
+// StartWatcher connects to the ISS urine tank telemetry and publishes
+// the integer tank level via pubsub on each change.
+func StartWatcher(ctx context.Context) {
 	ch, err := gopiss.WatchISSUrineTankLevel(ctx)
 	if err != nil {
 		log.Printf("piss watcher: %v", err)
@@ -31,16 +32,13 @@ func StartWatcher(ctx context.Context, target string, privmsgf func(string, stri
 	}
 
 	go func() {
-		var lastAnnounced time.Time
+		var lastIntLevel int
 
 		for level := range ch {
-			inRange := level >= 68.5 && level <= 69.5
-
-			if inRange && time.Since(lastAnnounced) > 15*time.Minute {
-				if onPiss69 != nil {
-					onPiss69()
-				}
-				lastAnnounced = time.Now()
+			currentInt := int(math.Floor(level))
+			if currentInt != lastIntLevel {
+				pubsub.Publish("piss", currentInt)
+				lastIntLevel = currentInt
 			}
 		}
 	}()

@@ -38,7 +38,9 @@ import (
 	"goirc/handlers/xkcd"
 	"goirc/internal/responder"
 	db "goirc/model"
+	"goirc/pubsub"
 	"goirc/web"
+	"log"
 	"regexp"
 	"time"
 
@@ -143,25 +145,37 @@ func addHandlers(b *bot.Bot) {
 		return nil
 	})
 
-	piss.StartWatcher(context.Background(), b.Channel, b.Conn.Privmsgf, func() error {
-		params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
-		if time.Now().UnixNano()%2 == 0 {
-			err := handlers.AnonLink(params)
-			if err != nil {
-				if errors.Is(err, linkpool.NoNoteFoundError) {
-					return handlers.AnonQuote(params)
+	var lastPiss69 time.Time
+
+	pubsub.Subscribe("piss", func(payload any) {
+		level, ok := payload.(int)
+		if !ok {
+			return
+		}
+		log.Printf("piss tank level: %d%%", level)
+
+		if level == 69 && time.Since(lastPiss69) > 15*time.Minute {
+			lastPiss69 = time.Now()
+			params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
+			if time.Now().UnixNano()%2 == 0 {
+				err := handlers.AnonLink(params)
+				if err != nil {
+					if errors.Is(err, linkpool.NoNoteFoundError) {
+						handlers.AnonQuote(params)
+					}
+					return
 				}
-				return err
-			}
-		} else {
-			err := handlers.AnonQuote(params)
-			if err != nil {
-				if errors.Is(err, linkpool.NoNoteFoundError) {
-					return handlers.AnonLink(params)
+			} else {
+				err := handlers.AnonQuote(params)
+				if err != nil {
+					if errors.Is(err, linkpool.NoNoteFoundError) {
+						handlers.AnonLink(params)
+					}
+					return
 				}
-				return err
 			}
 		}
-		return nil
 	})
+
+	piss.StartWatcher(context.Background())
 }

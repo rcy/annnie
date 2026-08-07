@@ -22,7 +22,6 @@ import (
 	"goirc/handlers/gold"
 	"goirc/handlers/hn"
 	"goirc/handlers/kinfonet"
-	"goirc/handlers/linkpool"
 	"goirc/handlers/lua"
 	"goirc/handlers/mcp"
 	"goirc/handlers/mlb"
@@ -171,26 +170,12 @@ func addHandlers(b *bot.Bot) {
 			lastPissAnnounce = time.Now()
 
 			params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
-
-			params.Privmsgf(params.Target(), "the iss urine tank level is at %d%%", level)
-
-			if time.Now().UnixNano()%2 == 0 {
-				err := handlers.AnonLink(params)
-				if err != nil {
-					if errors.Is(err, linkpool.NoNoteFoundError) {
-						handlers.AnonQuote(params)
-					}
-					return
-				}
-			} else {
-				err := handlers.AnonQuote(params)
-				if err != nil {
-					if errors.Is(err, linkpool.NoNoteFoundError) {
-						handlers.AnonLink(params)
-					}
-					return
-				}
+			note, err := handlers.AnonNote(params.Target())
+			if err != nil {
+				params.Privmsgf(params.Target(), "%d%%: %s", level, err)
+				return
 			}
+			params.Privmsgf(params.Target(), "%d%%: %s", level, note.Text.String)
 		}
 	})
 

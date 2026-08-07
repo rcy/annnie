@@ -1169,6 +1169,44 @@ func (q *Queries) UnsentAnonymousNotes(ctx context.Context, arg UnsentAnonymousN
 	return items, nil
 }
 
+const unsentAnonymousNotesAny = `-- name: UnsentAnonymousNotesAny :many
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where created_at <= ? and nick = target order by id asc limit 420
+`
+
+func (q *Queries) UnsentAnonymousNotesAny(ctx context.Context, createdAt time.Time) ([]Note, error) {
+	rows, err := q.db.QueryContext(ctx, unsentAnonymousNotesAny, createdAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Note
+	for rows.Next() {
+		var i Note
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Text,
+			&i.Kind,
+			&i.Target,
+			&i.Anon,
+			&i.OgTitle,
+			&i.OgDescription,
+			&i.OgImage,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFileMime = `-- name: UpdateFileMime :exec
 update files set mime = ?1 where id = ?2
 `

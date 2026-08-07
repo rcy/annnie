@@ -18,7 +18,7 @@ func Handle(params responder.Responder) error {
 		return fmt.Errorf("couldn't get piss tank level: %w", err)
 	}
 
-	params.Privmsgf(params.Target(), "the iss urine tank level is at %.0f%%", level)
+	params.Privmsgf(params.Target(), "%s: the iss urine tank level is at %.0f%%", params.Nick(), level)
 	return nil
 }
 

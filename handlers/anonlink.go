@@ -14,6 +14,12 @@ const (
 	minAge = 7 * time.Hour * 24
 )
 
+func AnonNote(target string) (model.Note, error) {
+	q := model.New(db.DB)
+	pool := linkpool.New(q, minAge)
+	return pool.PopRandomNote(context.Background(), target, "")
+}
+
 func AnonLink(params responder.Responder) error {
 	q := model.New(db.DB)
 	pool := linkpool.New(q, minAge)

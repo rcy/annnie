@@ -175,7 +175,7 @@ func addHandlers(b *bot.Bot) {
 				params.Privmsgf(params.Target(), "%d%%: %s", level, err)
 				return
 			}
-			params.Privmsgf(params.Target(), "%d%%: %s", level, note.Text.String)
+			params.Privmsgf(params.Target(), "%s", level, note.Text.String)
 		}
 	})
 

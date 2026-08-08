@@ -1127,7 +1127,7 @@ func (q *Queries) SetConfig(ctx context.Context, arg SetConfigParams) error {
 }
 
 const unsentAnonymousNotes = `-- name: UnsentAnonymousNotes :many
-select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where created_at <= ? and kind = ? and nick = target order by id asc limit 420
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where anon = 1 and created_at <= ? and kind = ? and nick = target order by id asc limit 420
 `
 
 type UnsentAnonymousNotesParams struct {
@@ -1170,7 +1170,7 @@ func (q *Queries) UnsentAnonymousNotes(ctx context.Context, arg UnsentAnonymousN
 }
 
 const unsentAnonymousNotesAny = `-- name: UnsentAnonymousNotesAny :many
-select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where created_at <= ? and nick = target order by id asc limit 420
+select id, created_at, nick, text, kind, target, anon, og_title, og_description, og_image from notes where anon = 1 and created_at <= ? and nick = target order by id asc limit 420
 `
 
 func (q *Queries) UnsentAnonymousNotesAny(ctx context.Context, createdAt time.Time) ([]Note, error) {

@@ -20,10 +20,10 @@ insert into notes(target, nick, kind, text, anon, og_title, og_description, og_i
 select created_at, nick, text, kind from notes where created_at > datetime('now', '-1 day') order by created_at asc;
 
 -- name: UnsentAnonymousNotes :many
-select * from notes where created_at <= ? and kind = ? and nick = target order by id asc limit 420;
+select * from notes where anon = 1 and created_at <= ? and kind = ? and nick = target order by id asc limit 420;
 
 -- name: UnsentAnonymousNotesAny :many
-select * from notes where created_at <= ? and nick = target order by id asc limit 420;
+select * from notes where anon = 1 and created_at <= ? and nick = target order by id asc limit 420;
 
 -- name: MarkAnonymousNoteDelivered :one
 update notes set target = ?, created_at = current_timestamp where id = ? returning *;

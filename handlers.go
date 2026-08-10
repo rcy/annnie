@@ -10,6 +10,7 @@ import (
 	"goirc/handlers"
 	"goirc/handlers/annie"
 	"goirc/handlers/annietts"
+	"goirc/handlers/aqi"
 	"goirc/handlers/bedtime"
 	"goirc/handlers/bible"
 	"goirc/handlers/bsky"
@@ -70,6 +71,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!?remind ?(?:me)? (.+)$`, handlers.RemindMe)
 	b.Handle(`^!left`, handlers.TimeLeft)
 	b.Handle(`^!epi`, epigram.Handle)
+	b.Handle(`^!aqi (.*)$`, aqi.Handle)
 	b.Handle(`^!weather (.*)$`, weather.Handle)
 	b.Handle(`^!weather$`, weather.Handle)
 	b.Handle(`^!w (.*)$`, weather.Handle)

@@ -1,0 +1,30 @@
+{
+  "status": "success",
+  "data": {
+    "city": "Creston",
+    "state": "British Columbia",
+    "country": "Canada",
+    "location": {
+      "type": "Point",
+      "coordinates": [-116.512, 49.096]
+    },
+    "current": {
+      "pollution": {
+        "ts": "2024-01-15T12:00:00.000Z",
+        "aqius": 42,
+        "mainus": "p2",
+        "aqicn": 17,
+        "maincn": "p2"
+      },
+      "weather": {
+        "ts": "2024-01-15T12:00:00.000Z",
+        "tp": -5,
+        "pr": 1015,
+        "hu": 60,
+        "ws": 3.5,
+        "wd": 180,
+        "ic": "01d"
+      }
+    }
+  }
+}

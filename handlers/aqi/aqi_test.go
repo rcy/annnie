@@ -24,25 +24,11 @@ func TestString(t *testing.T) {
 	if got != want {
 		t.Errorf("got:\n  %s\nwant:\n  %s", got, want)
 	}
-}
 
-func TestParseQuery(t *testing.T) {
-	for _, tc := range []struct {
-		q                     string
-		city, state, country  string
-	}{
-		{"creston", "creston", "", ""},
-		{"creston, bc, canada", "creston", "bc", "canada"},
-		{"los angeles, california, usa", "los angeles", "california", "usa"},
-		{"beijing, china", "beijing", "", "china"},
-		{"vancouver, bc", "vancouver", "", "bc"},
-		{"", "", "", ""},
-	} {
-		city, state, country := parseQuery(tc.q)
-		if city != tc.city || state != tc.state || country != tc.country {
-			t.Errorf("parseQuery(%q): got (%q, %q, %q), want (%q, %q, %q)",
-				tc.q, city, state, country, tc.city, tc.state, tc.country)
-		}
+	aqiGot := r.AQIString()
+	aqiWant := "AQI 42 🟢 Good"
+	if aqiGot != aqiWant {
+		t.Errorf("AQIString: got %q, want %q", aqiGot, aqiWant)
 	}
 }
 

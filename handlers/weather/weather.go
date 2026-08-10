@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	db "goirc/db/model"
+	"goirc/handlers/aqi"
 	"goirc/internal/responder"
 	"goirc/model"
 	"io"
@@ -223,7 +224,16 @@ func Handle(params responder.Responder) error {
 		return err
 	}
 
-	params.Privmsgf(params.Target(), "%s, %s today: %s", weath.Name, countryStr, weath.String())
+	weatherStr := weath.String()
+
+	airQuality, err := aqi.FetchAQIByCoords(weath.Coord.Lat, weath.Coord.Lon)
+	if err == nil {
+		if aqiStr := airQuality.AQIString(); aqiStr != "" {
+			weatherStr += ", " + aqiStr
+		}
+	}
+
+	params.Privmsgf(params.Target(), "%s, %s today: %s", weath.Name, countryStr, weatherStr)
 
 	return nil
 }

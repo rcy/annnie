@@ -24,6 +24,7 @@ const systemPrompt = `<instructions>
   4. Report what you did in a short message.
 * Never remove existing functions unless explicitly asked.
 * Write concise, working Lua code. No placeholder functions.
+* When requested to, export a Lua function with a top-level call to register_command("exported_command_name", lua_function, "short documentation string")
 </instructions>`
 
 var Tools = []openai.ChatCompletionToolUnionParam{

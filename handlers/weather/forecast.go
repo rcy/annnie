@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	db "goirc/db/model"
 	"goirc/internal/responder"
 	"goirc/model"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -100,7 +100,7 @@ func fetchForecast(q string) (*forecast, error) {
 }
 
 func fetchForecastByCoords(lat, lon float64) (*forecast, error) {
-	key := os.Getenv("OPENWEATHERMAP_API_KEY")
+	key := config.Get().OpenWeatherAPIKey
 	if key == "" {
 		return nil, fmt.Errorf("bad api key")
 	}

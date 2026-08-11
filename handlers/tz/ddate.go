@@ -3,16 +3,16 @@ package tz
 import (
 	"context"
 	"fmt"
+	"goirc/config"
 	"goirc/db/model"
 	"goirc/internal/responder"
 	db "goirc/model"
-	"os"
 )
 
 func Handle(params responder.Responder) error {
 	tz, err := getNickTimezone(context.TODO(), params.Nick())
 	if err != nil {
-		params.Privmsgf(params.Target(), "%s: I don't know your timezone. Visit %s to set it", params.Nick(), os.Getenv("ROOT_URL"))
+		params.Privmsgf(params.Target(), "%s: I don't know your timezone. Visit %s to set it", params.Nick(), config.Get().RootURL)
 		return nil
 	}
 

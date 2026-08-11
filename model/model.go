@@ -1,8 +1,8 @@
 package model
 
 import (
+	"goirc/config"
 	"goirc/db"
-	"goirc/util"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -10,7 +10,9 @@ import (
 var DB *sqlx.DB
 
 func init() {
-	DB = db.Open(util.Getenv("SQLITE_DB"))
+	if path := config.Get().SQLiteDB; path != "" {
+		DB = db.Open(path)
+	}
 }
 
 func Close() {

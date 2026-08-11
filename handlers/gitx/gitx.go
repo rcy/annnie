@@ -2,8 +2,8 @@ package gitx
 
 import (
 	"fmt"
+	"goirc/config"
 	"goirc/internal/responder"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -14,8 +14,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
-var GitRepo = os.Getenv("LUA_GIT_REPO")
-
 var allowed = map[string]bool{
 	"push":   true,
 	"pull":   true,
@@ -24,7 +22,7 @@ var allowed = map[string]bool{
 }
 
 func auth() *http.BasicAuth {
-	token := os.Getenv("GITHUB_TOKEN")
+	token := config.Get().GitHubToken
 	if token == "" {
 		return nil
 	}
@@ -46,7 +44,7 @@ func Handle(params responder.Responder) error {
 		return nil
 	}
 
-	repo, err := gogit.PlainOpen(GitRepo)
+	repo, err := gogit.PlainOpen(config.Get().LuaGitRepo)
 	if err != nil {
 		params.Privmsgf(params.Target(), "not a git repository: %s", err)
 		return nil

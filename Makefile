@@ -1,8 +1,11 @@
 export BUILDKIT_PROGRESS=plain
 export CGO_ENABLED=0
 
-watch:
+watch: .env.local
 	. ./.env && . ./.env.local && air
+
+.env.local:
+	>$@
 
 build:
 	go build -o tmp/main .

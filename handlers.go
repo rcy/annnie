@@ -109,6 +109,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^tz`, tz.Handle)
 	b.Handle(`(https?://\S+)`, handlers.Link)
 	b.Handle(`\b69[^0-9]*\b`, handlers.Nice)
+	b.Handle(`\bsixty.?nine\b`, handlers.Nice)
 	b.Handle(`night`, bedtime.Handle)
 
 	b.Repeat(10*time.Second, handlers.DoRemind)

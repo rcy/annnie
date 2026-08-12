@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"fmt"
 	"goirc/db/model"
 	"goirc/internal/ai"
 	"html/template"
@@ -129,21 +130,26 @@ func (s *summary) LoadAll(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("DEBUGX hYkR 2")
 
 	err = s.SummarizeNotes(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("DEBUGX Xwxs 3")
 
 	err = s.SummarizeQuotes(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("DEBUGX 8Zjs 4")
 
 	err = s.ProcessLinks(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("DEBUGX bgrf 5")
+
 	return nil
 }
 
@@ -229,10 +235,15 @@ func WeekStart(t time.Time, location *time.Location) time.Time {
 }
 
 func (s *summary) WeeklyNewsletter(ctx context.Context) ([]byte, error) {
+	ctx = ai.WithDiagFunc(ctx, func(msg string) { fmt.Println("diag:", msg) })
+
+	fmt.Println("DEBUGX jG4m 0")
 	err := s.LoadAll(ctx)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("DEBUGX x6ah 1")
+
 	b, err := s.HTML(ctx)
 	if err != nil {
 		return nil, err

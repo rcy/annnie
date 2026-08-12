@@ -3,6 +3,7 @@ package lua
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"goirc/handlers/gitx"
 	"goirc/internal/responder"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -25,20 +27,47 @@ var (
 	outBuf bytes.Buffer
 )
 
+// ErrCommandNotFound is returned when a command name is not registered.
+var ErrCommandNotFound = errors.New("command not found")
+
+// Command describes a Lua command registered via register_command().
+type Command struct {
+	Name string
+	Desc string
+}
+
+type luaCommand struct {
+	fn   *lua.LFunction
+	desc string
+}
+
+var registeredCommands = map[string]*luaCommand{}
+
 func getState() (*lua.LState, error) {
 	if state == nil {
-		state = lua.NewState()
-		setupPrint(state)
-		setupHTTP(state)
-		if code, err := getScriptFromDB(); err != nil {
+		code, err := getScriptFromDB()
+		if err != nil {
 			return nil, fmt.Errorf("lua: getScriptFromDB: %w", err)
-		} else if code != "" {
-			if err := state.DoString(code); err != nil {
-				return nil, fmt.Errorf("lua: DoString: %w", err)
-			}
+		}
+		state = lua.NewState()
+		if err := loadState(state, code); err != nil {
+			return nil, fmt.Errorf("lua: DoString: %w", err)
 		}
 	}
 	return state, nil
+}
+
+// loadState sets up the given state and loads the script, resetting the
+// registered command registry so stale entries from a previous state are dropped.
+func loadState(L *lua.LState, code string) error {
+	setupPrint(L)
+	setupHTTP(L)
+	setupCommands(L)
+	registeredCommands = map[string]*luaCommand{}
+	if err := L.DoString(code); err != nil {
+		return err
+	}
+	return nil
 }
 
 func Handle(params responder.Responder) error {
@@ -52,7 +81,7 @@ func Handle(params responder.Responder) error {
 
 	result, err := Eval(code)
 	if err != nil {
-		return fmt.Errorf("Eval", err)
+		return fmt.Errorf("Eval: %w", err)
 	}
 	params.Privmsgf(params.Target(), "%s", truncateForIRC(result))
 	return nil
@@ -114,6 +143,87 @@ func Eval(code string) (string, error) {
 	return out, nil
 }
 
+// Dispatch is the IRC handler for registered Lua commands. It matches
+// "!<name> [args...]" and silently ignores unknown command names.
+func Dispatch(params responder.Responder) error {
+	name := params.Match(1)
+	args := params.Match(2)
+
+	result, err := Invoke(name, args)
+	if err != nil {
+		if errors.Is(err, ErrCommandNotFound) {
+			return nil
+		}
+		return err
+	}
+	params.Privmsgf(params.Target(), "%s", truncateForIRC(result))
+	return nil
+}
+
+// Invoke calls a previously registered Lua command with a single string
+// argument and returns the printed/returned output.
+func Invoke(name, args string) (string, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	L, err := getState()
+	if err != nil {
+		return "", fmt.Errorf("getState: %w", err)
+	}
+
+	cmd, ok := registeredCommands[name]
+	if !ok {
+		return "", ErrCommandNotFound
+	}
+
+	return invoke(L, cmd, args)
+}
+
+// ListCommands returns the currently registered Lua commands sorted by name.
+func ListCommands() []Command {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if _, err := getState(); err != nil {
+		return nil
+	}
+
+	cmds := make([]Command, 0, len(registeredCommands))
+	for name, cmd := range registeredCommands {
+		cmds = append(cmds, Command{Name: name, Desc: cmd.desc})
+	}
+	sort.Slice(cmds, func(i, j int) bool { return cmds[i].Name < cmds[j].Name })
+	return cmds
+}
+
+func invoke(L *lua.LState, cmd *luaCommand, args string) (string, error) {
+	outBuf.Reset()
+
+	L.Push(cmd.fn)
+	L.Push(lua.LString(args))
+	if err := L.PCall(1, lua.MultRet, nil); err != nil {
+		return "", fmt.Errorf("lua error: %s", err)
+	}
+
+	if L.GetTop() > 0 {
+		n := L.GetTop()
+		for i := 1; i <= n; i++ {
+			if i > 1 {
+				fmt.Fprint(&outBuf, "\t")
+			}
+			fmt.Fprint(&outBuf, L.ToStringMeta(L.Get(i)).String())
+		}
+		fmt.Fprintln(&outBuf)
+		L.Pop(n)
+	}
+
+	out := strings.TrimSpace(outBuf.String())
+	if out == "" {
+		return "nil", nil
+	}
+	return out, nil
+}
+
 func setupPrint(L *lua.LState) {
 	printFn := L.NewFunction(func(L *lua.LState) int {
 		top := L.GetTop()
@@ -134,6 +244,37 @@ func setupHTTP(L *lua.LState) {
 	mod.RawSetString("json", L.NewFunction(luaHttpJSON))
 
 	L.SetGlobal("http", mod)
+}
+
+func setupCommands(L *lua.LState) {
+	L.SetGlobal("register_command", L.NewFunction(luaRegisterCommand))
+}
+
+func luaRegisterCommand(L *lua.LState) int {
+	name := L.CheckString(1)
+	fn := L.CheckFunction(2)
+	desc := ""
+	if L.GetTop() >= 3 {
+		desc = L.CheckString(3)
+	}
+	if !validCommandName(name) {
+		L.RaiseError("register_command: invalid command name %q (use letters, digits, and underscores)", name)
+		return 0
+	}
+	registeredCommands[name] = &luaCommand{fn: fn, desc: desc}
+	return 0
+}
+
+func validCommandName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') && r != '_' {
+			return false
+		}
+	}
+	return true
 }
 
 func luaHttpGet(L *lua.LState) int {
@@ -259,9 +400,7 @@ func SaveScript(code string) error {
 
 	// Validate by loading into a fresh state first
 	testL := lua.NewState()
-	setupPrint(testL)
-	setupHTTP(testL)
-	err := testL.DoString(code)
+	err := loadState(testL, code)
 	testL.Close()
 	if err != nil {
 		return fmt.Errorf("lua parse error: %w", err)
@@ -278,9 +417,7 @@ func SaveScript(code string) error {
 		state.Close()
 	}
 	state = lua.NewState()
-	setupPrint(state)
-	setupHTTP(state)
-	if err := state.DoString(code); err != nil {
+	if err := loadState(state, code); err != nil {
 		return fmt.Errorf("reload error: %w", err)
 	}
 

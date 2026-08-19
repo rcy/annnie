@@ -60,7 +60,7 @@ func summarize(ctx context.Context, trends []Trend) (string, error) {
 	}
 
 	completion, err := ai.Complete(ctx, ai.Params{
-		SystemPrompt: "Briefly summarize what's going on based on the trending topics below. Be terse, write like a human in a chat, not a machine. Use minimal punctuation and lowercase. Don't mention Bluesky or that these are trends. It's OK to omit things.",
+		SystemPrompt: "Briefly summarize in a paragraph, not a list, what's going on based on the trending topics below. Be terse, write like a human in a chat, not a machine. Use minimal punctuation and lowercase. Don't mention Bluesky or that these are trends. It's OK to omit things.",
 		UserPrompt:   strings.Join(items, "\n"),
 	})
 	if err != nil {

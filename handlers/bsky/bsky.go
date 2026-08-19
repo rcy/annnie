@@ -70,7 +70,7 @@ func summarize(ctx context.Context, trends []Trend) (string, error) {
 }
 
 func fetchTrends() ([]Trend, error) {
-	req, err := http.NewRequest("GET", "https://api.bsky.app/xrpc/app.bsky.unspecced.getTrends", nil)
+	req, err := http.NewRequest("GET", "https://api.bsky.app/xrpc/app.bsky.unspecced.getTrends?limit=5", nil)
 	if err != nil {
 		return nil, err
 	}

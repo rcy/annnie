@@ -89,7 +89,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^tip$`, tip.Handle)
 	b.Handle(`^date$`, ddate.Handle)
 	b.Handle(`^!cnn\b(.+)?`, news.Handle)
-	b.Handle(`^!bsky (.+) (.+)`, bsky.Handle)
+	b.Handle(`^!bsky$`, bsky.Handle)
 	b.Handle(`^!get (\S+)$`, handlers.GetConfig)
 	b.Handle(`^!set (\S+) (.+)$`, handlers.SetConfig)
 	b.Handle(`^!bug (.+)$`, bug.Handle)

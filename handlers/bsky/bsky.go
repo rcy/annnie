@@ -1,130 +1,99 @@
 package bsky
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"goirc/internal/ai"
 	"goirc/internal/responder"
 	"io"
-	"math/rand"
 	"net/http"
-	"net/url"
+	"sort"
+	"strings"
 )
 
+type Trend struct {
+	Topic       string `json:"topic"`
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+	Link        string `json:"link"`
+	StartedAt   string `json:"startedAt"`
+	PostCount   int    `json:"postCount"`
+	Status      string `json:"status"`
+	Category    string `json:"category"`
+}
+
+type TrendsResponse struct {
+	RecIdStr string  `json:"recIdStr"`
+	Trends   []Trend `json:"trends"`
+}
+
 func Handle(params responder.Responder) error {
-	url, err := getRandomLink(params.Match(1), params.Match(2))
+	trends, err := fetchTrends()
+	if err != nil {
+		return err
+	}
+	if len(trends) == 0 {
+		return fmt.Errorf("no trends found")
+	}
+
+	sort.Slice(trends, func(i, j int) bool {
+		return trends[i].PostCount > trends[j].PostCount
+	})
+	if len(trends) > 8 {
+		trends = trends[:8]
+	}
+
+	summary, err := summarize(params.Context(), trends)
 	if err != nil {
 		return err
 	}
 
-	params.Privmsgf(params.Target(), "%s", url)
-
+	params.Privmsgf(params.Target(), "%s", summary)
 	return nil
 }
 
-type Post struct {
-	Embed *struct {
-		External *struct {
-			URI *string `json:"uri"`
-		} `json:"external"`
-	} `json:"embed"`
-}
+func summarize(ctx context.Context, trends []Trend) (string, error) {
+	var items []string
+	for _, t := range trends {
+		items = append(items, fmt.Sprintf("%s: %s (%d posts, %s)", t.DisplayName, t.Description, t.PostCount, t.Category))
+	}
 
-type Response struct {
-	Posts []Post `json:"posts"`
-}
-
-func getRandomLink(domain string, query string) (string, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?domain=%s&sort=latest&limit=3&q=%s",
-		domain,
-		url.QueryEscape(query)), nil)
+	completion, err := ai.Complete(ctx, ai.Params{
+		SystemPrompt: "Briefly summarize what's going on based on the trending topics below. Be terse, write like a human in a chat, not a machine. Use minimal punctuation and lowercase. Don't mention Bluesky or that these are trends. It's OK to omit things.",
+		UserPrompt:   strings.Join(items, "\n"),
+	})
 	if err != nil {
 		return "", err
 	}
+	return completion, nil
+}
 
-	//req.Header.Set("Authorization", "Bearer "+token)
+func fetchTrends() ([]Trend, error) {
+	req, err := http.NewRequest("GET", "https://api.bsky.app/xrpc/app.bsky.unspecced.getTrends", nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("User-Agent", "github.com/rcy/annnie")
 
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("getTrends: status %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var response Response
+	var response TrendsResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return "", err
-	}
-
-	var uris []string
-	for _, post := range response.Posts {
-		if post.Embed != nil && post.Embed.External != nil && post.Embed.External.URI != nil {
-			uris = append(uris, *post.Embed.External.URI)
-		}
-	}
-
-	if len(uris) == 0 {
-		return "", fmt.Errorf("No URIs found")
-	}
-
-	return uris[rand.Intn(len(uris))], nil
-}
-
-// ///////////////////////////////////////////////////////////////// session
-type SessionRequest struct {
-	Identifier string `json:"identifier"`
-	Password   string `json:"password"`
-}
-
-type SessionResponse struct {
-	AccessJWT  string `json:"accessJwt"`
-	RefreshJWT string `json:"refreshJwt"`
-	DID        string `json:"did"`
-	Handle     string `json:"handle"`
-}
-
-func getSession(identifier, password string) (*SessionResponse, error) {
-	reqBody := SessionRequest{
-		Identifier: identifier,
-		Password:   password,
-	}
-
-	// Encode request to JSON
-	jsonData, err := json.Marshal(reqBody)
-	if err != nil {
 		return nil, err
 	}
-
-	// Create POST request to the PDS
-	url := "https://bsky.social/xrpc/com.atproto.server.createSession"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-
-	// Required headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "my-go-client/0.1")
-
-	// Do the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Decode JSON response
-	var sessionResp SessionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sessionResp); err != nil {
-		return nil, err
-	}
-
-	return &sessionResp, nil
+	return response.Trends, nil
 }

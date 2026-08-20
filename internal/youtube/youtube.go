@@ -3,9 +3,9 @@ package youtube
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 type Result struct {
@@ -30,7 +30,7 @@ type searchResponse struct {
 
 // Search queries the YouTube Data API v3 for the top video matching query.
 func Search(query string) (*Result, error) {
-	apiKey := os.Getenv("YOUTUBE_API_KEY")
+	apiKey := config.Get().YouTubeAPIKey
 	if apiKey == "" {
 		return nil, fmt.Errorf("YOUTUBE_API_KEY not set")
 	}

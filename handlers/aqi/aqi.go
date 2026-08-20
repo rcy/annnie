@@ -3,10 +3,10 @@ package aqi
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -92,7 +92,7 @@ func aqiLevel(aqi int) aqiLevelInfo {
 }
 
 func FetchAQIByCoords(lat, lon float64) (*iqairResponse, error) {
-	key := os.Getenv("IQAIR_API_KEY")
+	key := config.Get().IQAIRAPIKey
 	if key == "" {
 		return nil, fmt.Errorf("IQAIR_API_KEY not set")
 	}

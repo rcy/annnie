@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"goirc/config"
 	"goirc/db/model"
 	db "goirc/model"
 	"goirc/internal/responder"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -71,7 +71,7 @@ func Speak(text string, params responder.Responder) error {
 		Mime: sql.NullString{String: "audio/mpeg", Valid: true},
 	})
 
-	url := fmt.Sprintf("%s/uploads/%d", os.Getenv("ROOT_URL"), file.ID)
+	url := fmt.Sprintf("%s/uploads/%d", config.Get().RootURL, file.ID)
 	params.Privmsgf(params.Target(), "%s: %s", params.Nick(), url)
 
 	return nil

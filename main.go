@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 	"goirc/bot"
+	"goirc/config"
 	"goirc/events"
 	"goirc/handlers/lua"
 	"goirc/handlers/mcp"
 	"goirc/internal/ai"
 	internalmcp "goirc/internal/mcp"
 	db "goirc/model"
-	"goirc/util"
 	"goirc/web"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -23,11 +22,9 @@ import (
 //go:generate go tool github.com/sqlc-dev/sqlc/cmd/sqlc generate --file db/sqlc.yaml
 
 func main() {
-	evokeFile, ok := os.LookupEnv("EVOKE_DB")
-	if !ok {
-		log.Fatal("EVOKE_DB not defined")
-	}
-	es, err := evoke.NewStore(evoke.Config{DBFile: evokeFile})
+	cfg := config.Load()
+
+	es, err := evoke.NewStore(evoke.Config{DBFile: cfg.EvokeDB})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,11 +37,11 @@ func main() {
 
 	b, err := bot.Connect(
 		es,
-		util.Getenv("IRC_NICK"),
-		util.Getenv("IRC_CHANNEL"),
-		util.Getenv("IRC_SERVER"),
-		util.Getenv("SASL_LOGIN"),
-		util.Getenv("SASL_PASSWORD"))
+		cfg.IRCNick,
+		cfg.IRCChannel,
+		cfg.IRCServer,
+		cfg.SASLLogin,
+		cfg.SASLPassword)
 	if err != nil {
 		log.Fatal(err)
 	}

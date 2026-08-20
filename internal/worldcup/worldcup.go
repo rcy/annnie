@@ -12,8 +12,8 @@ package worldcup
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -104,7 +104,7 @@ func nextMatch(matches []Match, country string) (Match, bool) {
 }
 
 func NextMatch(country string) (string, error) {
-	matches, err := fetchMatches(os.Getenv("FOOTBALL_DATA_API_KEY"))
+	matches, err := fetchMatches(config.Get().FootballDataAPIKey)
 	if err != nil {
 		return "", fmt.Errorf("fetchMatches: %w", err)
 	}

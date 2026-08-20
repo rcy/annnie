@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"goirc/db/model"
 	db "goirc/model"
 	"net/http"
@@ -45,12 +46,12 @@ func GenerateRunpod(ctx context.Context, prompt string) (*GeneratedImage, error)
 		return nil, err
 	}
 
-	err = os.MkdirAll(ImageFileBase, os.FileMode(0755))
+	err = os.MkdirAll(config.Get().ImageFileBase, os.FileMode(0755))
 	if err != nil {
 		return nil, err
 	}
 
-	err = decodeDataURL(genResp.Output.ImageURL, fmt.Sprintf("%s/%d.png", ImageFileBase, gi.ID))
+	err = decodeDataURL(genResp.Output.ImageURL, fmt.Sprintf("%s/%d.png", config.Get().ImageFileBase, gi.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func genRunpodImage(prompt string) (*runpodResponse, error) {
 	}
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+os.Getenv("RUNPOD_API_KEY"))
+	req.Header.Add("Authorization", "Bearer "+config.Get().RunPodAPIKey)
 
 	resp, err := client.Do(req)
 	if err != nil {

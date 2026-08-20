@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"goirc/handlers/gitx"
+	"goirc/config"
 	"goirc/internal/responder"
 	"io"
 	"net/http"
@@ -367,10 +367,10 @@ func getScriptFromDB() (string, error) {
 	// 	return "", fmt.Errorf("lua_script config is empty")
 	// }
 	filename := "script.lua"
-	if gitx.GitRepo == "" {
+	if config.Get().LuaGitRepo == "" {
 		return "", fmt.Errorf("LUA_GIT_REPO not set")
 	}
-	body, err := os.ReadFile(filepath.Join(gitx.GitRepo, filename))
+	body, err := os.ReadFile(filepath.Join(config.Get().LuaGitRepo, filename))
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", filename, err)
 	}
@@ -407,7 +407,7 @@ func SaveScript(code string) error {
 	}
 
 	// save script to disk
-	scriptPath := filepath.Join(gitx.GitRepo, "script.lua")
+	scriptPath := filepath.Join(config.Get().LuaGitRepo, "script.lua")
 	if err := os.WriteFile(scriptPath, []byte(code), 0644); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}

@@ -3,9 +3,9 @@ package tmdb
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 type Movie struct {
@@ -37,7 +37,7 @@ type creditsResult struct {
 }
 
 func Search(query string, year string) ([]Movie, error) {
-	apiKey := os.Getenv("TMDB_API_KEY")
+	apiKey := config.Get().TMDBAPIKey
 	if apiKey == "" {
 		return nil, fmt.Errorf("TMDB_API_KEY not set")
 	}
@@ -71,7 +71,7 @@ func Search(query string, year string) ([]Movie, error) {
 }
 
 func Credits(movieID int) ([]Credit, []CrewMember, error) {
-	apiKey := os.Getenv("TMDB_API_KEY")
+	apiKey := config.Get().TMDBAPIKey
 	if apiKey == "" {
 		return nil, nil, fmt.Errorf("TMDB_API_KEY not set")
 	}

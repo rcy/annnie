@@ -5,6 +5,7 @@ go 1.26.3
 require (
 	github.com/BurntSushi/migration v0.0.0-20140125045755-c45b897f1335
 	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-git/go-git/v5 v5.19.1

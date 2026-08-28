@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
+	"goirc/config"
 	"goirc/db/model"
 	"goirc/handlers/lua"
 	"goirc/internal/tmdb"
@@ -44,7 +44,7 @@ func GetDeepSeekBalance(ctx context.Context) (*DeepSeekBalance, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("DEEPSEEK_API_KEY"))
+	req.Header.Set("Authorization", "Bearer "+config.Get().DeepSeekAPIKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -416,7 +416,7 @@ func CompleteDeepSeek(ctx context.Context, params Params) (string, error) {
 
 	client := openai.NewClient(
 		option.WithBaseURL("https://api.deepseek.com/v1"),
-		option.WithAPIKey(os.Getenv("DEEPSEEK_API_KEY")),
+		option.WithAPIKey(config.Get().DeepSeekAPIKey),
 	)
 
 	messages := []openai.ChatCompletionMessageParamUnion{

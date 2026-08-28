@@ -2,7 +2,7 @@ package lua
 
 import (
 	"fmt"
-	"goirc/handlers/gitx"
+	"goirc/config"
 	"os"
 	"path/filepath"
 
@@ -11,7 +11,7 @@ import (
 )
 
 func auth() *http.BasicAuth {
-	token := os.Getenv("GITHUB_TOKEN")
+	token := config.Get().GitHubToken
 	if token == "" {
 		return nil
 	}
@@ -20,16 +20,16 @@ func auth() *http.BasicAuth {
 
 // CloneOrPull ensures the git repo is cloned or up to date on startup.
 func CloneOrPull() error {
-	if gitx.GitRepo == "" {
+	if config.Get().LuaGitRepo == "" {
 		return fmt.Errorf("LUA_GIT_REPO not set")
 	}
-	remote := os.Getenv("LUA_GIT_REMOTE")
+	remote := config.Get().LuaGitRemote
 	if remote == "" {
 		return fmt.Errorf("LUA_GIT_REMOTE not set")
 	}
 
-	if _, err := os.Stat(filepath.Join(gitx.GitRepo, ".git")); os.IsNotExist(err) {
-		_, err := git.PlainClone(gitx.GitRepo, false, &git.CloneOptions{
+	if _, err := os.Stat(filepath.Join(config.Get().LuaGitRepo, ".git")); os.IsNotExist(err) {
+		_, err := git.PlainClone(config.Get().LuaGitRepo, false, &git.CloneOptions{
 			URL:  remote,
 			Auth: auth(),
 		})
@@ -39,7 +39,7 @@ func CloneOrPull() error {
 		return nil
 	}
 
-	repo, err := git.PlainOpen(gitx.GitRepo)
+	repo, err := git.PlainOpen(config.Get().LuaGitRepo)
 	if err != nil {
 		return fmt.Errorf("open repo: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"goirc/bot"
+	"goirc/config"
 	"goirc/db/model"
 	"goirc/events"
 	"goirc/internal/og"
@@ -107,7 +108,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 			Mime:      "image/png",
 		})
 	}
-	uploadPrefix := os.Getenv("ROOT_URL") + "/uploads/"
+	uploadPrefix := config.Get().RootURL + "/uploads/"
 	for _, n := range notes {
 		if n.Kind == "link" && strings.HasPrefix(n.Text.String, uploadPrefix) {
 			continue
@@ -375,7 +376,7 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := fmt.Sprintf("%s/uploads/%d", os.Getenv("ROOT_URL"), file.ID)
+	url := fmt.Sprintf("%s/uploads/%d", config.Get().RootURL, file.ID)
 
 	note, err := s.Queries.InsertNote(context.TODO(), model.InsertNoteParams{
 		Target: s.Bot.Channel,

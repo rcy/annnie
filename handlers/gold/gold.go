@@ -3,9 +3,9 @@ package gold
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"goirc/internal/responder"
 	"net/http"
-	"os"
 )
 
 type response struct {
@@ -61,7 +61,7 @@ func getGoldPrice(token string) (float64, error) {
 }
 
 func Handle(params responder.Responder) error {
-	price, err := getGoldPrice(os.Getenv("GOLD_API_TOKEN"))
+	price, err := getGoldPrice(config.Get().GoldAPIToken)
 	if err != nil {
 		return err
 	}

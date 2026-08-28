@@ -3,7 +3,6 @@ package util
 import (
 	"log"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -40,13 +39,4 @@ func BareDomain(uri string) string {
 	return strings.Replace(parsedUrl.Host, "www.", "", 1)
 }
 
-func Getenv(key string) string {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		log.Fatalf("%s not set!", key)
-	} else {
-		log.Printf("%s=%s\n", key, val)
-	}
 
-	return val
-}

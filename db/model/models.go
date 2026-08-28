@@ -105,6 +105,12 @@ type Note struct {
 	OgImage       sql.NullString
 }
 
+type PissLevel struct {
+	ID        int64
+	CreatedAt time.Time
+	Level     int64
+}
+
 type Reminder struct {
 	ID        int64
 	CreatedAt time.Time

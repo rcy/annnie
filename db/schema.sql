@@ -85,3 +85,8 @@ CREATE TABLE configs(
   value text not null,
   nick text not null
 );
+CREATE TABLE piss_levels(
+  id integer not null primary key,
+  created_at datetime not null default current_timestamp,
+  level integer not null
+);

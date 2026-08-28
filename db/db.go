@@ -328,6 +328,17 @@ alter table notes add column og_image text;
 `)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add piss_levels table")
+			_, err := tx.Exec(`
+create table piss_levels(
+  id integer not null primary key,
+  created_at datetime not null default current_timestamp,
+  level integer not null
+);
+`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

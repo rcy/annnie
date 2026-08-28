@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"goirc/internal/responder"
+	"goirc/model"
 	"goirc/pubsub"
 
 	"github.com/rcy/gopiss"
@@ -39,6 +40,11 @@ func StartWatcher(ctx context.Context) {
 			if currentInt != lastIntLevel {
 				pubsub.Publish("piss", currentInt)
 				lastIntLevel = currentInt
+
+				_, err := model.DB.Exec(`INSERT INTO piss_levels(level) VALUES (?)`, currentInt)
+				if err != nil {
+					log.Printf("piss watcher: recording level: %v", err)
+				}
 			}
 		}
 	}()

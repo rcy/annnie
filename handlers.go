@@ -163,6 +163,7 @@ func addHandlers(b *bot.Bot) {
 			return
 		}
 		log.Printf("piss tank level: %d%%", level)
+		b.Diagf("piss %d", level)
 
 		triggers := map[int]bool{69: true}
 		cfg, err := q.GetConfig(context.Background(), "ppp")

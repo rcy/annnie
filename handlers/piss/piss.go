@@ -32,20 +32,19 @@ func StartWatcher(ctx context.Context) {
 		return
 	}
 
-	go func() {
-		var lastIntLevel int
+	var lastIntLevel int
 
-		for level := range ch {
-			currentInt := int(math.Floor(level))
-			if currentInt != lastIntLevel {
-				pubsub.Publish("piss", currentInt)
-				lastIntLevel = currentInt
+	for level := range ch {
+		currentInt := int(math.Floor(level))
+		if currentInt != lastIntLevel {
+			pubsub.Publish("piss", currentInt)
+			lastIntLevel = currentInt
 
-				_, err := model.DB.Exec(`INSERT INTO piss_levels(level) VALUES (?)`, currentInt)
-				if err != nil {
-					log.Printf("piss watcher: recording level: %v", err)
-				}
+			_, err := model.DB.Exec(`INSERT INTO piss_levels(level) VALUES (?)`, currentInt)
+			if err != nil {
+				log.Printf("piss watcher: recording level: %v", err)
 			}
 		}
-	}()
+	}
+	log.Printf("piss watcher: died")
 }

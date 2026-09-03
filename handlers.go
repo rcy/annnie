@@ -189,5 +189,7 @@ func addHandlers(b *bot.Bot) {
 		}
 	})
 
-	piss.StartWatcher(context.Background())
+	for {
+		piss.StartWatcher(context.Background())
+	}
 }

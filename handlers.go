@@ -157,6 +157,8 @@ func addHandlers(b *bot.Bot) {
 
 	var lastPissAnnounce time.Time
 
+	params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
+
 	pubsub.Subscribe("piss", func(payload any) {
 		level, ok := payload.(int)
 		if !ok {
@@ -179,7 +181,6 @@ func addHandlers(b *bot.Bot) {
 		if triggers[level] && time.Since(lastPissAnnounce) > 15*time.Minute {
 			lastPissAnnounce = time.Now()
 
-			params := bot.NewHandlerParams(context.Background(), b.Channel, b.MakePrivmsgf())
 			note, err := handlers.AnonNote(params.Target())
 			if err != nil {
 				params.Privmsgf(params.Target(), "%d%%: %s", level, err)
@@ -192,6 +193,7 @@ func addHandlers(b *bot.Bot) {
 	go func() {
 		for {
 			piss.StartWatcher(context.Background())
+			params.Privmsgf(params.Target(), "piss watcher died")
 		}
 	}()
 }

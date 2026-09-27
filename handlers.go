@@ -190,10 +190,10 @@ func addHandlers(b *bot.Bot) {
 		}
 	})
 
-	go func() {
-		for {
-			piss.StartWatcher(context.Background())
-			params.Privmsgf(params.Target(), "piss watcher died")
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		piss.StartWatcher(context.Background())
+	// 		params.Privmsgf(params.Target(), "piss watcher died")
+	// 	}
+	// }()
 }

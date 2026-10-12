@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"goirc/bot"
+	"goirc/config"
 	"goirc/db/model"
 	"goirc/events"
 	"goirc/handlers/annie"
 	"goirc/handlers/xkcd"
-	"goirc/image"
 	"goirc/internal/idstr"
 	"goirc/internal/responder"
 	"goirc/internal/summary"
@@ -94,7 +94,7 @@ func HandleAuth(params responder.Responder) error {
 	}
 	var c = code(strings.Split(uuid.Must(uuid.NewV4()).String(), "-")[0])
 	codes[c] = oneTimeCode{nick: params.Nick()}
-	params.Privmsgf(params.Nick(), "hi %s, login with this link: %s/login/code/%s", params.Nick(), os.Getenv("ROOT_URL"), c)
+	params.Privmsgf(params.Nick(), "hi %s, login with this link: %s/login/code/%s", params.Nick(), config.Get().RootURL, c)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func HandleDeauth(params responder.Responder) error {
 	if err != nil {
 		return err
 	}
-	params.Privmsgf(params.Nick(), "%s: all your sessions have been destroyed on %s", params.Nick(), os.Getenv("ROOT_URL"))
+	params.Privmsgf(params.Nick(), "%s: all your sessions have been destroyed on %s", params.Nick(), config.Get().RootURL)
 	return nil
 }
 
@@ -177,7 +177,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				return
 			}
 
-			b.Conn.Privmsgf(nick, "hi %s, login with this link: %s/login/code/%s", nick, os.Getenv("ROOT_URL"), c)
+			b.Conn.Privmsgf(nick, "hi %s, login with this link: %s/login/code/%s", nick, config.Get().RootURL, c)
 
 			tmpl, err := template.New("").Parse(loginTemplate)
 			if err != nil {
@@ -689,7 +689,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		}
 		err = generatedImageTemplate.Execute(w, map[string]any{
 			"image":            image,
-			"absoluteImageURL": fmt.Sprintf("%s/images/%d.png", os.Getenv("ROOT_URL"), image.ID),
+			"absoluteImageURL": fmt.Sprintf("%s/images/%d.png", config.Get().RootURL, image.ID),
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -697,7 +697,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		}
 	})
 
-	fs := http.FileServer(http.Dir(image.ImageFileBase))
+	fs := http.FileServer(http.Dir(config.Get().ImageFileBase))
 	r.Handle("/images/*",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%.0f", (time.Hour*24*365).Seconds()))
@@ -705,7 +705,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		}),
 	)
 
-	addr := ":" + os.Getenv("PORT")
+	addr := ":" + config.Get().Port
 	log.Printf("web server listening on %s", addr)
 	err := http.ListenAndServe(addr, r)
 	if err != nil {

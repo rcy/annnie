@@ -3,7 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
-	"os"
+	"goirc/config"
 	"strings"
 	"sync"
 
@@ -168,7 +168,7 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 // FromEnv reads MCP endpoints from the ANNIE_MCP_ENDPOINTS env var.
 // Format: comma-separated URLs, or name=url pairs.
 func FromEnv(ctx context.Context) (*Client, error) {
-	raw := os.Getenv("ANNIE_MCP_ENDPOINTS")
+	raw := config.Get().AnnieMCPEndpoints
 	if raw == "" {
 		return nil, nil
 	}

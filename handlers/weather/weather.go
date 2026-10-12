@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	db "goirc/db/model"
 	"goirc/handlers/aqi"
 	"goirc/internal/responder"
@@ -11,7 +12,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/pariz/gountries"
@@ -136,7 +136,7 @@ func makeWeatherAPIURL(key string, city string) (string, error) {
 }
 
 func fetchWeather(city string) (*weather, error) {
-	key := os.Getenv("OPENWEATHERMAP_API_KEY")
+	key := config.Get().OpenWeatherAPIKey
 	if key == "" {
 		return nil, fmt.Errorf("bad api key")
 	}
@@ -165,7 +165,7 @@ func fetchWeather(city string) (*weather, error) {
 }
 
 func fetchXWeather(city string) ([]byte, error) {
-	key := os.Getenv("OPENWEATHERMAP_API_KEY")
+	key := config.Get().OpenWeatherAPIKey
 	if key == "" {
 		return nil, fmt.Errorf("bad api key")
 	}

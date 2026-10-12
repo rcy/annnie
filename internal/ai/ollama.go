@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -65,7 +65,7 @@ func completeOllamaResponse(ctx context.Context, systemPrompt string, prompt str
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("OLLAMA_API_KEY"))
+	req.Header.Set("Authorization", "Bearer "+config.Get().OllamaAPIKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -3,10 +3,10 @@ package xkcd
 import (
 	"encoding/json"
 	"fmt"
+	"goirc/config"
 	"goirc/internal/responder"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -46,7 +46,7 @@ func fetchAndSend(params responder.Responder, id int) error {
 		return err
 	}
 
-	rootURL := os.Getenv("ROOT_URL")
+	rootURL := config.Get().RootURL
 	params.Privmsgf(params.Target(), "#%d: %s %s/xkcd/%d", comic.Num, comic.Title, rootURL, comic.Num)
 
 	return nil

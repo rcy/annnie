@@ -193,7 +193,8 @@ func addHandlers(b *bot.Bot) {
 	go func() {
 		for {
 			piss.StartWatcher(context.Background())
-			params.Privmsgf(params.Target(), "piss watcher died")
+			time.Sleep(time.Minute)
+			b.Diagf("piss watcher died")
 		}
 	}()
 }

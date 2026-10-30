@@ -8,6 +8,7 @@ import (
 	"goirc/internal/responder"
 	"io"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -37,9 +38,14 @@ func Handle(params responder.Responder) error {
 		return fmt.Errorf("no trends found")
 	}
 
+	trends = slices.DeleteFunc(trends, func(t Trend) bool {
+		return t.Category == "politics"
+	})
+
 	sort.Slice(trends, func(i, j int) bool {
 		return trends[i].PostCount > trends[j].PostCount
 	})
+
 	if len(trends) > 8 {
 		trends = trends[:8]
 	}
@@ -70,7 +76,7 @@ func summarize(ctx context.Context, trends []Trend) (string, error) {
 }
 
 func fetchTrends() ([]Trend, error) {
-	req, err := http.NewRequest("GET", "https://api.bsky.app/xrpc/app.bsky.unspecced.getTrends?limit=5", nil)
+	req, err := http.NewRequest("GET", "https://api.bsky.app/xrpc/app.bsky.unspecced.getTrends?limit=25", nil)
 	if err != nil {
 		return nil, err
 	}

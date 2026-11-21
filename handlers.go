@@ -29,6 +29,7 @@ import (
 	"goirc/handlers/news"
 	"goirc/handlers/ontyranny"
 	"goirc/handlers/piss"
+	"goirc/handlers/stock"
 	"goirc/handlers/tip"
 	"goirc/handlers/track"
 	"goirc/handlers/tts"
@@ -101,6 +102,8 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!track (.+)$`, track.Handle)
 	b.Handle(`^!piss$`, piss.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)
+
+	b.Handle(`^\$([a-zA-Z.]+)$`, stock.Handle)
 
 	b.Handle(`^,(.+)$`, handlers.CreateNote)
 	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)

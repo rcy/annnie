@@ -16,8 +16,12 @@ type quoteResponse struct {
 				RegularMarketPrice float64 `json:"regularMarketPrice"`
 				ChartPreviousClose float64 `json:"chartPreviousClose"`
 				Currency           string  `json:"currency"`
-				ShortName          string  `json:"shortName"`
 			} `json:"meta"`
+			Indicators struct {
+				Quote []struct {
+					Close []interface{} `json:"close"`
+				} `json:"quote"`
+			} `json:"indicators"`
 		} `json:"result"`
 		Error *struct {
 			Code        string `json:"code"`
@@ -26,8 +30,8 @@ type quoteResponse struct {
 	} `json:"chart"`
 }
 
-func fetchQuote(symbol string) (*quoteResponse, error) {
-	url := fmt.Sprintf("https://query1.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d", symbol)
+func fetchQuote(symbol, rangePeriod, interval string) (*quoteResponse, error) {
+	url := fmt.Sprintf("https://query1.finance.yahoo.com/v8/finance/chart/%s?range=%s&interval=%s", symbol, rangePeriod, interval)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -49,40 +53,119 @@ func fetchQuote(symbol string) (*quoteResponse, error) {
 	return &qr, nil
 }
 
-func Handle(params responder.Responder) error {
-	symbol := strings.ToUpper(params.Match(1))
-
-	qr, err := fetchQuote(symbol)
-	if err != nil {
-		return err
-	}
-
-	if qr.Chart.Error != nil {
-		return fmt.Errorf("%s: %s", symbol, qr.Chart.Error.Description)
-	}
-
+func firstClose(qr *quoteResponse) (float64, bool) {
 	if len(qr.Chart.Result) == 0 {
-		return fmt.Errorf("%s: not found", symbol)
+		return 0, false
 	}
-
-	meta := qr.Chart.Result[0].Meta
-	price := meta.RegularMarketPrice
-	prevClose := meta.ChartPreviousClose
-	currency := meta.Currency
-
-	change := price - prevClose
-	changePct := 0.0
-	if prevClose > 0 {
-		changePct = (change / prevClose) * 100
+	closes := qr.Chart.Result[0].Indicators.Quote
+	if len(closes) == 0 {
+		return 0, false
 	}
+	for _, v := range closes[0].Close {
+		if f, ok := toFloat(v); ok {
+			return f, true
+		}
+	}
+	return 0, false
+}
 
+func toFloat(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case nil:
+		return 0, false
+	default:
+		return 0, false
+	}
+}
+
+func formatChange(price, baseline float64) string {
+	if baseline == 0 {
+		return "n/a"
+	}
+	change := price - baseline
+	pct := (change / baseline) * 100
+	if pct > -0.005 && pct < 0.005 {
+		return ""
+	}
 	sign := ""
 	if change > 0 {
 		sign = "+"
 	}
+	return fmt.Sprintf("%s%.2f%%", sign, pct)
+}
 
-	params.Privmsgf(params.Target(), "%s: %.2f %s (%s%.2f / %s%.2f%%)",
-		symbol, price, currency, sign, change, sign, changePct)
+func Handle(params responder.Responder) error {
+	symbol := strings.ToUpper(params.Match(1))
+
+	type period struct {
+		label    string
+		rangePd  string
+		interval string
+	}
+	periods := []period{
+		{"1d", "1d", "1d"},
+		{"7d", "7d", "1d"},
+		{"30d", "1mo", "1d"},
+		{"1y", "1y", "1mo"},
+	}
+
+	// Fetch all periods in parallel
+	type result struct {
+		label string
+		qr    *quoteResponse
+		err   error
+	}
+	ch := make(chan result, len(periods))
+	for _, p := range periods {
+		go func(p period) {
+			qr, err := fetchQuote(symbol, p.rangePd, p.interval)
+			ch <- result{p.label, qr, err}
+		}(p)
+	}
+
+	results := make(map[string]*quoteResponse)
+	for range periods {
+		r := <-ch
+		if r.err != nil {
+			return r.err
+		}
+		if r.qr.Chart.Error != nil {
+			return fmt.Errorf("%s: %s", symbol, r.qr.Chart.Error.Description)
+		}
+		if len(r.qr.Chart.Result) == 0 {
+			return fmt.Errorf("%s: not found", symbol)
+		}
+		results[r.label] = r.qr
+	}
+
+	// Get current price from the 1d result
+	price := results["1d"].Chart.Result[0].Meta.RegularMarketPrice
+	currency := results["1d"].Chart.Result[0].Meta.Currency
+
+	// Build change strings, omitting zero/empty changes
+	changes := []string{}
+	for _, p := range periods {
+		qr := results[p.label]
+		var baseline float64
+		if b, ok := firstClose(qr); ok {
+			baseline = b
+		} else {
+			baseline = qr.Chart.Result[0].Meta.ChartPreviousClose
+		}
+		if baseline == 0 {
+			continue
+		}
+		s := formatChange(price, baseline)
+		if s == "" {
+			continue
+		}
+		changes = append(changes, fmt.Sprintf("%s: %s", p.label, s))
+	}
+
+	params.Privmsgf(params.Target(), "%s: %.2f %s (%s)",
+		symbol, price, currency, strings.Join(changes, ", "))
 
 	return nil
 }

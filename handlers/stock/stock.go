@@ -13,6 +13,7 @@ type quoteResponse struct {
 		Result []struct {
 			Meta struct {
 				Symbol             string  `json:"symbol"`
+				LongName           string  `json:"longName"`
 				RegularMarketPrice float64 `json:"regularMarketPrice"`
 				ChartPreviousClose float64 `json:"chartPreviousClose"`
 				Currency           string  `json:"currency"`
@@ -140,9 +141,11 @@ func Handle(params responder.Responder) error {
 		results[r.label] = r.qr
 	}
 
-	// Get current price from the 1d result
-	price := results["1d"].Chart.Result[0].Meta.RegularMarketPrice
-	currency := results["1d"].Chart.Result[0].Meta.Currency
+	// Get current price and name
+	meta := results["1d"].Chart.Result[0].Meta
+	price := meta.RegularMarketPrice
+	currency := meta.Currency
+	name := meta.LongName
 
 	// Build change strings, omitting zero/empty changes
 	changes := []string{}
@@ -164,8 +167,13 @@ func Handle(params responder.Responder) error {
 		changes = append(changes, fmt.Sprintf("%s: %s", p.label, s))
 	}
 
-	params.Privmsgf(params.Target(), "%s: %.2f %s (%s)",
-		symbol, price, currency, strings.Join(changes, ", "))
+	nameStr := ""
+	if name != "" {
+		nameStr = name + " "
+	}
+
+	params.Privmsgf(params.Target(), "%s: %s%.2f %s (%s)",
+		symbol, nameStr, price, currency, strings.Join(changes, ", "))
 
 	return nil
 }

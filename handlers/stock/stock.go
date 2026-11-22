@@ -81,6 +81,47 @@ func toFloat(v interface{}) (float64, bool) {
 	}
 }
 
+type searchResponse struct {
+	Quotes []struct {
+		Symbol string `json:"symbol"`
+	} `json:"quotes"`
+}
+
+// resolveSymbol tries the input as a ticker first; if the chart API returns
+// an error, it searches Yahoo Finance and returns the top result's symbol.
+func resolveSymbol(input string) (string, error) {
+	// Try as a ticker first with a cheap 1d request
+	qr, err := fetchQuote(input, "1d", "1d")
+	if err == nil && qr.Chart.Error == nil && len(qr.Chart.Result) > 0 {
+		return input, nil
+	}
+
+	// Fall back to search
+	url := fmt.Sprintf("https://query2.finance.yahoo.com/v1/finance/search?q=%s&quotesCount=1&newsCount=0", input)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var sr searchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
+		return "", err
+	}
+
+	if len(sr.Quotes) == 0 {
+		return "", fmt.Errorf("%s: not found", input)
+	}
+
+	return sr.Quotes[0].Symbol, nil
+}
+
 func formatChange(price, baseline float64) string {
 	if baseline == 0 {
 		return "n/a"
@@ -98,7 +139,12 @@ func formatChange(price, baseline float64) string {
 }
 
 func Handle(params responder.Responder) error {
-	symbol := strings.ToUpper(params.Match(1))
+	input := strings.ToUpper(params.Match(1))
+
+	symbol, err := resolveSymbol(input)
+	if err != nil {
+		return err
+	}
 
 	type period struct {
 		label    string

@@ -103,7 +103,7 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!piss$`, piss.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)
 
-	b.Handle(`^\$([a-zA-Z.]+)$`, stock.Handle)
+	b.Handle(`^\$([a-zA-Z0-9.]+)$`, stock.Handle)
 
 	b.Handle(`^,(.+)$`, handlers.CreateNote)
 	b.Handle(`^([^\s:]{3,}): (.+)$`, handlers.DeferredDelivery)

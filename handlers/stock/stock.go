@@ -198,7 +198,11 @@ func Handle(params responder.Responder) error {
 	for _, p := range periods {
 		qr := results[p.label]
 		var baseline float64
-		if b, ok := firstClose(qr); ok {
+		if p.label == "1d" {
+			// For 1d, use chartPreviousClose (last trading day's close)
+			// since the 1d range only has today's data point
+			baseline = qr.Chart.Result[0].Meta.ChartPreviousClose
+		} else if b, ok := firstClose(qr); ok {
 			baseline = b
 		} else {
 			baseline = qr.Chart.Result[0].Meta.ChartPreviousClose

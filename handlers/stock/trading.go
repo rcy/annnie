@@ -263,22 +263,24 @@ func HandlePortfolio(params responder.Responder) error {
 		mktVal := l.shares * prices[l.symbol]
 		totalValue += mktVal
 		pnl := mktVal - l.costBasis
-		sign := "+"
+		arrow := "↑"
 		if pnl < 0 {
-			sign = ""
+			arrow = "↓"
+			pnl = -pnl
 		}
-		holdings = append(holdings, fmt.Sprintf("%s %s $%.0f→$%.0f (%s$%.0f)", l.symbol, l.buyDate.Format("Jan2"), l.costBasis, mktVal, sign, pnl))
+		holdings = append(holdings, fmt.Sprintf("%s %s $%.0f%s%.0f", l.symbol, l.buyDate.Format("Jan2"), mktVal, arrow, pnl))
 	}
 
 	portfolio := cash + totalValue
 	pnl := portfolio - startingCash
-	sign := "+"
+	arrow := "↑"
 	if pnl < 0 {
-		sign = ""
+		arrow = "↓"
+		pnl = -pnl
 	}
-	parts := []string{fmt.Sprintf("total $%.0f (%s$%.0f)", portfolio, sign, pnl), fmt.Sprintf("cash $%.0f", cash)}
+	parts := []string{fmt.Sprintf("total $%.0f%s%.0f", portfolio, arrow, pnl), fmt.Sprintf("cash $%.0f", cash)}
 	parts = append(parts, holdings...)
-	params.Privmsgf(params.Target(), "%s: %s", nick, strings.Join(parts, " | "))
+	params.Privmsgf(params.Target(), "%s: %s", nick, strings.Join(parts, ", "))
 	return nil
 }
 

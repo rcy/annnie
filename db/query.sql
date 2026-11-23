@@ -164,3 +164,9 @@ on conflict(key) do update set value = excluded.value, nick = excluded.nick;
 
 -- name: DeleteConfig :exec
 delete from configs where key = @key;
+
+-- name: InsertStockTransaction :exec
+insert into stock_transactions(nick, verb, symbol, amount_usd, shares, price) values(?, ?, ?, ?, ?, ?);
+
+-- name: NickStockTransactions :many
+select * from stock_transactions where nick = ? order by created_at asc;

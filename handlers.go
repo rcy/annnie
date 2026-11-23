@@ -103,6 +103,10 @@ func addHandlers(b *bot.Bot) {
 	b.Handle(`^!piss$`, piss.Handle)
 	b.Handle(`^!balance$`, handlers.Balance)
 
+	b.Handle(`^!buy (\S+) (\d+)$`, stock.HandleBuy)
+	b.Handle(`^!sell (\S+)(?: (\d+))?$`, stock.HandleSell)
+	b.Handle(`^!portfolio$`, stock.HandlePortfolio)
+
 	b.Handle(`^\$([a-zA-Z0-9.]+)$`, stock.Handle)
 
 	b.Handle(`^,(.+)$`, handlers.CreateNote)

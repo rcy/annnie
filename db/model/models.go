@@ -125,6 +125,17 @@ type Rev struct {
 	Sha       string
 }
 
+type StockTransaction struct {
+	ID        int64
+	CreatedAt time.Time
+	Nick      string
+	Verb      string
+	Symbol    string
+	AmountUsd float64
+	Shares    float64
+	Price     float64
+}
+
 type Visit struct {
 	ID        int64
 	CreatedAt time.Time

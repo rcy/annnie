@@ -470,6 +470,31 @@ func (q *Queries) InsertNote(ctx context.Context, arg InsertNoteParams) (Note, e
 	return i, err
 }
 
+const insertStockTransaction = `-- name: InsertStockTransaction :exec
+insert into stock_transactions(nick, verb, symbol, amount_usd, shares, price) values(?, ?, ?, ?, ?, ?)
+`
+
+type InsertStockTransactionParams struct {
+	Nick      string
+	Verb      string
+	Symbol    string
+	AmountUsd float64
+	Shares    float64
+	Price     float64
+}
+
+func (q *Queries) InsertStockTransaction(ctx context.Context, arg InsertStockTransactionParams) error {
+	_, err := q.db.ExecContext(ctx, insertStockTransaction,
+		arg.Nick,
+		arg.Verb,
+		arg.Symbol,
+		arg.AmountUsd,
+		arg.Shares,
+		arg.Price,
+	)
+	return err
+}
+
 const insertVisit = `-- name: InsertVisit :exec
 insert into visits(session, note_id) values(?,?)
 `
@@ -865,6 +890,42 @@ func (q *Queries) NickBySession(ctx context.Context, session string) (NickSessio
 		&i.Session,
 	)
 	return i, err
+}
+
+const nickStockTransactions = `-- name: NickStockTransactions :many
+select id, created_at, nick, verb, symbol, amount_usd, shares, price from stock_transactions where nick = ? order by created_at asc
+`
+
+func (q *Queries) NickStockTransactions(ctx context.Context, nick string) ([]StockTransaction, error) {
+	rows, err := q.db.QueryContext(ctx, nickStockTransactions, nick)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StockTransaction
+	for rows.Next() {
+		var i StockTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Verb,
+			&i.Symbol,
+			&i.AmountUsd,
+			&i.Shares,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const nicksWithNoteCount = `-- name: NicksWithNoteCount :many

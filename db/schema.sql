@@ -90,3 +90,13 @@ CREATE TABLE piss_levels(
   created_at datetime not null default current_timestamp,
   level integer not null
 );
+CREATE TABLE stock_transactions(
+  id integer not null primary key,
+  created_at datetime not null default current_timestamp,
+  nick text not null,
+  verb text not null,
+  symbol text not null,
+  amount_usd real not null,
+  shares real not null,
+  price real not null
+);

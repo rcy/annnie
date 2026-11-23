@@ -258,7 +258,7 @@ func HandlePortfolio(params responder.Responder) error {
 
 	// Build output — single line
 	var totalValue float64
-	var parts []string
+	var holdings []string
 	for _, l := range lots {
 		mktVal := l.shares * prices[l.symbol]
 		totalValue += mktVal
@@ -267,7 +267,7 @@ func HandlePortfolio(params responder.Responder) error {
 		if pnl < 0 {
 			sign = ""
 		}
-		parts = append(parts, fmt.Sprintf("%s %s $%.0f→$%.0f (%s$%.0f)", l.symbol, l.buyDate.Format("Jan2"), l.costBasis, mktVal, sign, pnl))
+		holdings = append(holdings, fmt.Sprintf("%s %s $%.0f→$%.0f (%s$%.0f)", l.symbol, l.buyDate.Format("Jan2"), l.costBasis, mktVal, sign, pnl))
 	}
 
 	portfolio := cash + totalValue
@@ -276,7 +276,8 @@ func HandlePortfolio(params responder.Responder) error {
 	if pnl < 0 {
 		sign = ""
 	}
-	parts = append(parts, fmt.Sprintf("cash $%.0f | total $%.0f (%s$%.0f)", cash, portfolio, sign, pnl))
+	parts := []string{fmt.Sprintf("total $%.0f (%s$%.0f)", portfolio, sign, pnl), fmt.Sprintf("cash $%.0f", cash)}
+	parts = append(parts, holdings...)
 	params.Privmsgf(params.Target(), "%s: %s", nick, strings.Join(parts, " | "))
 	return nil
 }

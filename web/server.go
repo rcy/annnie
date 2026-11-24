@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"goirc/bot"
@@ -702,6 +702,10 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 	})
 
 	r.Get("/stocks", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/stonks", http.StatusSeeOther)
+	})
+
+	r.Get("/stonks", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		q := model.New(db.DB)
 		nickFilter := r.URL.Query().Get("nick")

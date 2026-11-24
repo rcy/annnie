@@ -703,7 +703,14 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 	r.Get("/stocks", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		q := model.New(db.DB)
-		txns, err := q.AllStockTransactions(ctx)
+		nickFilter := r.URL.Query().Get("nick")
+		var txns []model.StockTransaction
+		var err error
+		if nickFilter != "" {
+			txns, err = q.NickStockTransactions(ctx, nickFilter)
+		} else {
+			txns, err = q.AllStockTransactions(ctx)
+		}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -170,3 +170,6 @@ insert into stock_transactions(nick, verb, symbol, amount_usd, shares, price) va
 
 -- name: NickStockTransactions :many
 select * from stock_transactions where nick = ? order by created_at asc;
+
+-- name: AllStockTransactions :many
+select * from stock_transactions order by created_at desc;

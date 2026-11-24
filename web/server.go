@@ -68,6 +68,9 @@ var generatedImageTemplate = template.Must(template.New("").Parse(generatedImage
 var generatedImagesTemplateContent string
 var generatedImagesTemplate = template.Must(template.New("").Parse(generatedImagesTemplateContent))
 
+//go:embed "templates/stock_transactions.gohtml"
+var stockTransactionsTemplateContent string
+
 var pacific = func(name string) *time.Location {
 	result, err := time.LoadLocation(name)
 	if err != nil {
@@ -690,6 +693,32 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		err = generatedImageTemplate.Execute(w, map[string]any{
 			"image":            image,
 			"absoluteImageURL": fmt.Sprintf("%s/images/%d.png", os.Getenv("ROOT_URL"), image.ID),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	r.Get("/stocks", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		q := model.New(db.DB)
+		txns, err := q.AllStockTransactions(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tmpl, err := template.New("").Funcs(template.FuncMap{
+			"time": func(t time.Time) string {
+				return t.In(pacific).Format("2006-01-02 15:04")
+			},
+		}).Parse(stockTransactionsTemplateContent)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = tmpl.Execute(w, map[string]any{
+			"transactions": txns,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

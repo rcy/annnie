@@ -87,6 +87,42 @@ func (q *Queries) AllNotes(ctx context.Context) ([]Note, error) {
 	return items, nil
 }
 
+const allStockTransactions = `-- name: AllStockTransactions :many
+select id, created_at, nick, verb, symbol, amount_usd, shares, price from stock_transactions order by created_at desc
+`
+
+func (q *Queries) AllStockTransactions(ctx context.Context) ([]StockTransaction, error) {
+	rows, err := q.db.QueryContext(ctx, allStockTransactions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StockTransaction
+	for rows.Next() {
+		var i StockTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Nick,
+			&i.Verb,
+			&i.Symbol,
+			&i.AmountUsd,
+			&i.Shares,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const cacheLoad = `-- name: CacheLoad :one
 select id, created_at, "key", value from cache where key = ?1
 `

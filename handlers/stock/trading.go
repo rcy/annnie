@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"goirc/db/model"
+	"math"
 	"goirc/internal/responder"
 	db "goirc/model"
 	"strconv"
@@ -211,7 +212,7 @@ func HandlePortfolio(params responder.Responder) error {
 	lots := buildLots(txns)
 
 	if len(lots) == 0 {
-		params.Privmsgf(params.Target(), "%s: cash $%.2f | no holdings | total $%.2f", nick, cash, cash)
+		params.Privmsgf(params.Target(), "%s: cash $%.0f | no holdings | total $%.0f", nick, math.Floor(cash), math.Floor(cash))
 		return nil
 	}
 
@@ -278,7 +279,7 @@ func HandlePortfolio(params responder.Responder) error {
 		arrow = "↓"
 		pnl = -pnl
 	}
-	parts := []string{fmt.Sprintf("total $%.0f%s%.0f", portfolio, arrow, pnl), fmt.Sprintf("cash $%.0f", cash)}
+	parts := []string{fmt.Sprintf("total $%.0f%s%.0f", portfolio, arrow, pnl), fmt.Sprintf("cash $%.0f", math.Floor(cash))}
 	parts = append(parts, holdings...)
 	params.Privmsgf(params.Target(), "%s: %s", nick, strings.Join(parts, ", "))
 	return nil

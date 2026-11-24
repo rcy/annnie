@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <title>stock transactions</title>
+    <meta name="robots" content="noindex,nofollow">
+    <style>
+      body { font-family: monospace; }
+      table { border-collapse: collapse; }
+      th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #ddd; }
+      th { border-bottom: 2px solid #333; }
+      .buy { color: green; }
+      .sell { color: red; }
+      .right { text-align: right; }
+    </style>
+  </head>
+  <body>
+    <h2>stock transactions</h2>
+    <table>
+      <tr>
+        <th>date</th>
+        <th>nick</th>
+        <th>action</th>
+        <th>symbol</th>
+        <th class="right">amount</th>
+        <th class="right">price</th>
+      </tr>
+      {{range .transactions}}
+      <tr>
+        <td>{{time .CreatedAt}}</td>
+        <td>{{.Nick}}</td>
+        <td class="{{if eq .Verb "BUY"}}buy{{else}}sell{{end}}">{{.Verb}}</td>
+        <td>{{.Symbol}}</td>
+        <td class="right">${{printf "%.0f" .AmountUsd}}</td>
+        <td class="right">${{printf "%.2f" .Price}}</td>
+      </tr>
+      {{end}}
+    </table>
+  </body>
+</html>

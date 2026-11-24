@@ -21,7 +21,8 @@
         <th>action</th>
         <th>symbol</th>
         <th class="right">amount</th>
-        <th class="right">price</th>
+        <th class="right">shares</th>
+        <th class="right">price/share</th>
       </tr>
       {{range .transactions}}
       <tr>
@@ -30,6 +31,7 @@
         <td class="{{if eq .Verb "BUY"}}buy{{else}}sell{{end}}">{{.Verb}}</td>
         <td>{{.Symbol}}</td>
         <td class="right">${{printf "%.0f" .AmountUsd}}</td>
+        <td class="right">{{printf "%.4g" .Shares}}</td>
         <td class="right">${{printf "%.2f" .Price}}</td>
       </tr>
       {{end}}

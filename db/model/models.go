@@ -111,6 +111,14 @@ type PissLevel struct {
 	Level     int64
 }
 
+type PortfolioSnapshot struct {
+	ID        int64
+	CreatedAt time.Time
+	Date      string
+	Nick      string
+	Value     float64
+}
+
 type Reminder struct {
 	ID        int64
 	CreatedAt time.Time

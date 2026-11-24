@@ -173,3 +173,13 @@ select * from stock_transactions where nick = ? order by created_at asc;
 
 -- name: AllStockTransactions :many
 select * from stock_transactions order by created_at desc;
+
+-- name: UpsertPortfolioSnapshot :exec
+insert into portfolio_snapshots(date, nick, value) values(?, ?, ?)
+on conflict(date, nick) do update set value = excluded.value;
+
+-- name: AllPortfolioSnapshots :many
+select * from portfolio_snapshots order by date asc, nick asc;
+
+-- name: DistinctStockNicks :many
+select distinct nick from stock_transactions;

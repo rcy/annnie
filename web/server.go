@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -704,10 +705,32 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		ctx := r.Context()
 		q := model.New(db.DB)
 		nickFilter := r.URL.Query().Get("nick")
+
+		// Fetch snapshots for chart
+		snapshots, err := q.AllPortfolioSnapshots(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		type chartPoint struct {
+			Date  string  `json:"date"`
+			Value float64 `json:"value"`
+		}
+		chartData := map[string][]chartPoint{}
+		for _, s := range snapshots {
+			chartData[s.Nick] = append(chartData[s.Nick], chartPoint{Date: s.Date, Value: s.Value})
+		}
+		chartJSON, _ := json.Marshal(chartData)
+
+		// Fetch transactions for table
 		var txns []model.StockTransaction
-		var err error
 		if nickFilter != "" {
 			txns, err = q.NickStockTransactions(ctx, nickFilter)
+			// Reverse to descending for table
+			for i, j := 0, len(txns)-1; i < j; i, j = i+1, j-1 {
+				txns[i], txns[j] = txns[j], txns[i]
+			}
 		} else {
 			txns, err = q.AllStockTransactions(ctx)
 		}
@@ -715,9 +738,13 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		tmpl, err := template.New("").Funcs(template.FuncMap{
 			"time": func(t time.Time) string {
 				return t.In(pacific).Format("2006-01-02 15:04")
+			},
+			"safeJS": func(s string) template.JS {
+				return template.JS(s)
 			},
 		}).Parse(stockTransactionsTemplateContent)
 		if err != nil {
@@ -726,6 +753,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		}
 		err = tmpl.Execute(w, map[string]any{
 			"transactions": txns,
+			"chartJSON":    string(chartJSON),
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

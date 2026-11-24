@@ -1,7 +1,8 @@
 <html>
   <head>
-    <title>stock transactions</title>
+    <title>stonks</title>
     <meta name="robots" content="noindex,nofollow">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body { font-family: monospace; }
       table { border-collapse: collapse; }
@@ -10,10 +11,14 @@
       .buy { color: green; }
       .sell { color: red; }
       .right { text-align: right; }
+      #chart-container { max-width: 800px; margin-bottom: 24px; }
     </style>
   </head>
   <body>
-    <h2>stock transactions</h2>
+    <h2>stonks</h2>
+    <div id="chart-container">
+      <canvas id="networth"></canvas>
+    </div>
     <table>
       <tr>
         <th>date</th>
@@ -36,5 +41,38 @@
       </tr>
       {{end}}
     </table>
+    <script>
+      const data = {{safeJS .chartJSON}};
+      const colors = [
+        '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
+        '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990',
+      ];
+      const datasets = [];
+      let i = 0;
+      for (const [nick, points] of Object.entries(data)) {
+        const color = colors[i++ % colors.length];
+        datasets.push({
+          label: nick,
+          data: points.map(p => ({x: p.date, y: Math.round(p.value)})),
+          borderColor: color,
+          backgroundColor: color,
+          tension: 0.1,
+          pointRadius: 3,
+        });
+      }
+      new Chart(document.getElementById('networth'), {
+        type: 'line',
+        data: {datasets},
+        options: {
+          scales: {
+            x: {type: 'category', title: {display: true, text: 'date'}},
+            y: {title: {display: true, text: 'net worth ($)'}},
+          },
+          plugins: {
+            title: {display: true, text: 'net worth over time'},
+          },
+        },
+      });
+    </script>
   </body>
 </html>

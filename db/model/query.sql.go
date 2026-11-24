@@ -87,6 +87,39 @@ func (q *Queries) AllNotes(ctx context.Context) ([]Note, error) {
 	return items, nil
 }
 
+const allPortfolioSnapshots = `-- name: AllPortfolioSnapshots :many
+select id, created_at, date, nick, value from portfolio_snapshots order by date asc, nick asc
+`
+
+func (q *Queries) AllPortfolioSnapshots(ctx context.Context) ([]PortfolioSnapshot, error) {
+	rows, err := q.db.QueryContext(ctx, allPortfolioSnapshots)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PortfolioSnapshot
+	for rows.Next() {
+		var i PortfolioSnapshot
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.Date,
+			&i.Nick,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const allStockTransactions = `-- name: AllStockTransactions :many
 select id, created_at, nick, verb, symbol, amount_usd, shares, price from stock_transactions order by created_at desc
 `
@@ -296,6 +329,33 @@ delete from notes where id = ?
 func (q *Queries) DeleteNoteByID(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteNoteByID, id)
 	return err
+}
+
+const distinctStockNicks = `-- name: DistinctStockNicks :many
+select distinct nick from stock_transactions
+`
+
+func (q *Queries) DistinctStockNicks(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, distinctStockNicks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var nick string
+		if err := rows.Scan(&nick); err != nil {
+			return nil, err
+		}
+		items = append(items, nick)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const generatedImageByID = `-- name: GeneratedImageByID :one
@@ -1392,6 +1452,22 @@ func (q *Queries) UpdateNoteTextByID(ctx context.Context, arg UpdateNoteTextByID
 		&i.OgImage,
 	)
 	return i, err
+}
+
+const upsertPortfolioSnapshot = `-- name: UpsertPortfolioSnapshot :exec
+insert into portfolio_snapshots(date, nick, value) values(?, ?, ?)
+on conflict(date, nick) do update set value = excluded.value
+`
+
+type UpsertPortfolioSnapshotParams struct {
+	Date  string
+	Nick  string
+	Value float64
+}
+
+func (q *Queries) UpsertPortfolioSnapshot(ctx context.Context, arg UpsertPortfolioSnapshotParams) error {
+	_, err := q.db.ExecContext(ctx, upsertPortfolioSnapshot, arg.Date, arg.Nick, arg.Value)
+	return err
 }
 
 const youtubeLinks = `-- name: YoutubeLinks :many

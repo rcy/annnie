@@ -355,6 +355,20 @@ create table stock_transactions(
 `)
 			return err
 		},
+		func(tx migration.LimitedTx) error {
+			log.Println("MIGRATE: add portfolio_snapshots table")
+			_, err := tx.Exec(`
+create table portfolio_snapshots(
+  id integer not null primary key,
+  created_at datetime not null default current_timestamp,
+  date text not null,
+  nick text not null,
+  value real not null,
+  unique(date, nick)
+);
+`)
+			return err
+		},
 	}
 
 	db, err := migration.Open("sqlite", dbfile, migrations)

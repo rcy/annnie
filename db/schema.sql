@@ -100,3 +100,11 @@ CREATE TABLE stock_transactions(
   shares real not null,
   price real not null
 );
+CREATE TABLE portfolio_snapshots(
+  id integer not null primary key,
+  created_at datetime not null default current_timestamp,
+  date text not null,
+  nick text not null,
+  value real not null,
+  unique(date, nick)
+);

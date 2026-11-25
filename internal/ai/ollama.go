@@ -76,7 +76,7 @@ func completeOllamaResponse(ctx context.Context, systemPrompt string, prompt str
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("Status: %s (error reading body: %w)", resp.Status, err)
+			return nil, fmt.Errorf("status: %s (error reading body: %w)", resp.Status, err)
 		}
 		return nil, fmt.Errorf("%s: %s", resp.Status, body)
 	}

@@ -30,8 +30,8 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/image/draw"
-	. "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
+	. "maragu.dev/gomponents"      //nolint:staticcheck // gomponents DSL
+	. "maragu.dev/gomponents/html" //nolint:staticcheck // gomponents DSL
 )
 
 var ErrNotSupported = errors.New("not a supported image format")
@@ -215,7 +215,7 @@ func (s *service) GetHandler(w http.ResponseWriter, r *http.Request) {
 		nodes = append(nodes, node)
 	}
 
-	HTML(
+	_ = HTML(
 		Head(
 			Script(Raw(snarfTimezoneJS)),
 		),
@@ -327,7 +327,7 @@ func (s *service) PostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to retrieve file", http.StatusBadRequest)
 		return
 	}
-	defer formFile.Close()
+	defer func() { _ = formFile.Close() }()
 
 	data, err := io.ReadAll(formFile)
 	if err != nil {
@@ -405,7 +405,7 @@ func (s *service) FileHandler(w http.ResponseWriter, r *http.Request) {
 	if file.Mime.Valid {
 		w.Header().Set("Content-Type", file.Mime.String)
 	}
-	w.Write(file.Content)
+	_, _ = w.Write(file.Content)
 }
 
 func (s *service) ThumbnailHandler(w http.ResponseWriter, r *http.Request) {
@@ -425,7 +425,7 @@ func (s *service) ThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	w.Header().Set("Content-Type", "image/jpeg")
-	w.Write(thumb)
+	_, _ = w.Write(thumb)
 }
 
 func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
@@ -438,7 +438,7 @@ func (s *service) SuccessHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	url := fmt.Sprintf("/uploads/%d", file.ID)
 
-	HTML(
+	_ = HTML(
 		Div(Text("upload successful")),
 		Div(A(Text(url), Href(url))),
 		Div(A(Text("upload another"), Href("/"))),
@@ -451,7 +451,7 @@ func (s *service) BackfillStatusHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, fmt.Sprintf("list files: %v", err), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "%d images need thumbnails\n", len(rows))
+	_, _ = fmt.Fprintf(w, "%d images need thumbnails\n", len(rows))
 }
 
 func (s *service) BackfillMimeHandler(w http.ResponseWriter, r *http.Request) {
@@ -485,7 +485,7 @@ func (s *service) BackfillMimeHandler(w http.ResponseWriter, r *http.Request) {
 		count++
 	}
 
-	fmt.Fprintf(w, "backfill mime: processed %d files\n", count)
+	_, _ = fmt.Fprintf(w, "backfill mime: processed %d files\n", count)
 }
 
 func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
@@ -531,7 +531,7 @@ func (s *service) BackfillHandler(w http.ResponseWriter, r *http.Request) {
 		count++
 	}
 
-	fmt.Fprintf(w, "backfill: processed %d images\n", count)
+	_, _ = fmt.Fprintf(w, "backfill: processed %d images\n", count)
 }
 
 func (s *service) BackfillOGHandler(w http.ResponseWriter, r *http.Request) {
@@ -566,7 +566,7 @@ func (s *service) BackfillOGHandler(w http.ResponseWriter, r *http.Request) {
 		count++
 	}
 
-	fmt.Fprintf(w, "backfill og: processed %d notes\n", count)
+	_, _ = fmt.Fprintf(w, "backfill og: processed %d notes\n", count)
 }
 
 // makeThumbnail decodes an image and returns a JPEG thumbnail scaled to fit within 300x300.
@@ -613,19 +613,19 @@ func makeFFmpegThumbnail(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(in.Name())
+	defer func() { _ = os.Remove(in.Name()) }()
 	if _, err := in.Write(data); err != nil {
-		in.Close()
+		_ = in.Close()
 		return nil, err
 	}
-	in.Close()
+	_ = in.Close()
 
 	out, err := os.CreateTemp("", "thumb-*.jpg")
 	if err != nil {
 		return nil, err
 	}
-	out.Close()
-	defer os.Remove(out.Name())
+	_ = out.Close()
+	defer func() { _ = os.Remove(out.Name()) }()
 
 	cmd := exec.Command("ffmpeg", "-i", in.Name(), "-vframes", "1", "-vf", "scale=300:300:force_original_aspect_ratio=decrease", "-y", "-loglevel", "error", out.Name())
 	if output, err := cmd.CombinedOutput(); err != nil {

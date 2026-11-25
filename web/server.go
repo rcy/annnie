@@ -38,8 +38,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	. "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
+	. "maragu.dev/gomponents"      //nolint:staticcheck // gomponents DSL
+	. "maragu.dev/gomponents/html" //nolint:staticcheck // gomponents DSL
 )
 
 //go:embed "templates/index.gohtml"
@@ -144,7 +144,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 	})
 
 	r.Get("/.well-known/atproto-did", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("did:plc:okr63g275op4edte4fnmcqin"))
+		_, _ = w.Write([]byte("did:plc:okr63g275op4edte4fnmcqin"))
 	})
 
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
@@ -272,7 +272,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 	r.Get("/vibe", func(w http.ResponseWriter, r *http.Request) {
 		contentURL := r.FormValue("url")
 
-		parsedURL, err := url.Parse(contentURL)
+		parsedURL, _ := url.Parse(contentURL)
 		if parsedURL.Host != "gist.githubusercontent.com" {
 			http.Error(w, "host not allowed", http.StatusBadRequest)
 			return
@@ -289,7 +289,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(bytes)
+		_, _ = w.Write(bytes)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -330,7 +330,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 		})
 
 		r.Get("/snapshot.db", func(w http.ResponseWriter, r *http.Request) {
-			os.Remove("/tmp/snapshot.db")
+			_ = os.Remove("/tmp/snapshot.db")
 			if _, err := db.Exec(`vacuum into '/tmp/snapshot.db'`); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -345,7 +345,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			Table(
+			_ = Table(
 				THead(Tr(Th(Text("Key")), Th(Text("Nick")), Th(Text("Value")))),
 				TBody(
 					Map(configs, func(c model.Config) Node {
@@ -370,7 +370,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			HTML(
+			_ = HTML(
 				Body(
 					El("h1", Text(cfg.Key)),
 					El("pre", Text(cfg.Value)),
@@ -384,7 +384,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			Table(TBody(
+			_ = Table(TBody(
 				Map(eventList, func(event evoke.Event) Node {
 					if event.EventType == evoke.EventTypeOf(events.PrivateMessageReceived{}) ||
 						event.EventType == evoke.EventTypeOf(events.PrivateMessageSent{}) {
@@ -598,7 +598,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			}
 
 			kinds := []string{"statement", "question", "pleasantry"}
-			HTML(
+			_ = HTML(
 				Head(El("style", Raw("body{font-family:monospace;padding:1em} nav{margin-bottom:1em} nav a{margin-right:1em} nav a.active{color:inherit;text-decoration:none;opacity:0.5} pre{white-space:pre-wrap}"))),
 				Body(
 					El("h1", Text("annnie system prompt")),
@@ -631,7 +631,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 			start := summary.WeekStart(date, pacific)
 			end := start.Add(time.Hour * 24 * 7)
 			if end.After(time.Now().In(pacific)) {
-				w.Write([]byte("not yet"))
+				_, _ = w.Write([]byte("not yet"))
 				return
 			}
 
@@ -641,7 +641,7 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			w.Write(b)
+			_, _ = w.Write(b)
 		})
 
 		uploader := uploads.NewUploader(q, db.DB, b)

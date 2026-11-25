@@ -8,8 +8,6 @@ import (
 	"github.com/rcy/evoke"
 )
 
-type channelNickMap map[string][]string
-
 type Projection struct {
 	db *sqlx.DB
 }

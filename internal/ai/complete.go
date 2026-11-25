@@ -10,7 +10,7 @@ import (
 	"github.com/openai/openai-go/v3"
 )
 
-var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie")
+var ErrBilling = errors.New("I need money: https://rcy.sh/fundannie") //nolint:staticcheck // user-facing message
 var ErrRejected = errors.New("Rejected")
 var Complete = CompleteDeepSeek
 

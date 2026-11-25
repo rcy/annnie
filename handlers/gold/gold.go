@@ -47,7 +47,9 @@ func getGoldPrice(token string) (float64, error) {
 	if err != nil {
 		return 0.0, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	var obj response
 	err = json.NewDecoder(resp.Body).Decode(&obj)

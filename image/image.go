@@ -22,7 +22,6 @@ func mustGetenv(key string) string {
 	return value
 }
 
-var openaiAPIKey = mustGetenv("OPENAI_API_KEY")
 var ImageFileBase = mustGetenv("IMAGE_FILE_BASE")
 var rootURL = mustGetenv("ROOT_URL")
 
@@ -83,7 +82,7 @@ func GenerateGPTImage(ctx context.Context, prompt string) (*GeneratedImage, erro
 	if err != nil {
 		return nil, err
 	}
-	defer imgFile.Close()
+	defer func() { _ = imgFile.Close() }()
 
 	_, err = imgFile.Write(imgBytes)
 	if err != nil {

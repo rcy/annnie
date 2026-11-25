@@ -131,9 +131,9 @@ func Image(params responder.Responder) error {
 		if errors.Is(err, ai.ErrRejected) {
 			elapsed := time.Since(start)
 			if elapsed > 30*time.Second {
-				return fmt.Errorf("Aborted after %s", elapsed)
+				return fmt.Errorf("aborted after %s", elapsed)
 			}
-			return fmt.Errorf("Rejected in %s", elapsed)
+			return fmt.Errorf("rejected in %s", elapsed)
 		}
 		return err
 	}

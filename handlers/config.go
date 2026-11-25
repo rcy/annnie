@@ -39,9 +39,9 @@ func SetConfig(params responder.Responder) error {
 		value = ref.Value
 	}
 
-	prev, err := q.GetConfig(ctx, key)
+	prev, _ := q.GetConfig(ctx, key)
 
-	err = q.SetConfig(ctx, model.SetConfigParams{
+	err := q.SetConfig(ctx, model.SetConfigParams{
 		Key:   key,
 		Value: value,
 		Nick:  params.Nick(),

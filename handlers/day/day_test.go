@@ -11,7 +11,7 @@ import (
 func makeServer(t *testing.T, html string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, html)
+		_, _ = fmt.Fprint(w, html)
 	}))
 }
 
@@ -24,7 +24,7 @@ func makeFileServer(t *testing.T, path string) *httptest.Server {
 			http.Error(w, "not found", 500)
 			return
 		}
-		w.Write(b)
+		_, _ = w.Write(b)
 	}))
 }
 

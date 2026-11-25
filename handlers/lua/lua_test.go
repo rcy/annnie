@@ -12,7 +12,7 @@ import (
 
 func TestHttpGetURLParsing(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello"))
+		_, _ = w.Write([]byte("hello"))
 	}))
 	defer ts.Close()
 
@@ -37,7 +37,7 @@ func TestHttpGetURLParsing(t *testing.T) {
 func TestHttpJSONParsing(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"key":"value","num":42}`))
+		_, _ = w.Write([]byte(`{"key":"value","num":42}`))
 	}))
 	defer ts.Close()
 

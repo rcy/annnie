@@ -74,7 +74,10 @@ func Handle(params responder.Responder) error {
 	code := params.Match(1)
 
 	if code == "reset" {
-		Reset()
+		err := Reset()
+		if err != nil {
+			return fmt.Errorf("Reset: %w", err)
+		}
 		params.Privmsgf(params.Target(), "lua state reset")
 		return nil
 	}
@@ -270,7 +273,7 @@ func validCommandName(name string) bool {
 		return false
 	}
 	for _, r := range name {
-		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') && r != '_' {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
 			return false
 		}
 	}

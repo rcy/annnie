@@ -1,3 +1,7 @@
-linters-settings:
-  errcheck:
-    ignore: "Rollback"
+version: "2"
+linters:
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*database/sql.Tx).Rollback
+        - (io.ReadCloser).Close

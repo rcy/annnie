@@ -22,7 +22,7 @@ func Handle(params responder.Responder) error {
 	if topic == "" {
 		result, err = news.News(ctx, 420)
 		if err != nil {
-			return fmt.Errorf("News: %w", err)
+			return fmt.Errorf("news: %w", err)
 		}
 	} else {
 		result, err = news.NewsByTopic(ctx, topic, 420)

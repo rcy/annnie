@@ -48,7 +48,7 @@ func TestIsTimeoff(t *testing.T) {
 			if err != nil {
 				t.Errorf("time.Parse: %s", err)
 			}
-			got, err := IsTimeoff(when, tc.zone, tc.coords[0], tc.coords[1])
+			got, _ := IsTimeoff(when, tc.zone, tc.coords[0], tc.coords[1])
 
 			if got != tc.want {
 				t.Errorf("set want: %t got: %t", tc.want, got)

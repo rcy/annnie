@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer es.Close()
+	defer func() { _ = es.Close() }()
 
 	err = lua.CloneOrPull()
 	if err != nil {

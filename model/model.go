@@ -14,7 +14,7 @@ func init() {
 }
 
 func Close() {
-	DB.Close()
+	_ = DB.Close()
 }
 
 type ChannelNick struct {

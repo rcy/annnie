@@ -41,16 +41,6 @@ func (tl TeamList) stringWorldSeriesWin() string {
 	return strings.Join(arr, " ")
 }
 
-func (tl TeamList) stringPlayoffs() string {
-	arr := []string{}
-	for i, team := range tl {
-		arr = append(arr, fmt.Sprintf("%s:%.0f%%", team.AbbName, 100*team.EndData.PoffTitle))
-		if i == 5 { // 6 teams in each division make the poffs
-			arr = append(arr, "|")
-		}
-	}
-	return strings.Join(arr, " ")
-}
 
 func fetchTeams() (TeamList, error) {
 	date := time.Now().Format(time.DateOnly)

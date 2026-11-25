@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"goirc/handlers/day"
 	"goirc/internal/ai"
 
 	"github.com/rcy/evoke"
@@ -449,10 +450,18 @@ func (bot *Bot) greetNewUser(ctx context.Context, channel string, nick string) e
 	// First time seeing this nick
 	time.Sleep(3 * time.Second)
 
+	location, _ := time.LoadLocation("America/Los_Angeles")
+	today := strings.ToLower(time.Now().In(location).Format("Jan/02"))
+	nationalDay, _ := day.GetEvent(today)
+	dayClause := ""
+	if nationalDay != "" {
+		dayClause = fmt.Sprintf(" The secret theme is %s. Ask a question inspired by this theme but do NOT mention the theme or holiday name itself.", nationalDay)
+	}
+
 	ctx = ai.WithDiagFunc(ctx, func(s string) { bot.Diagf("%s", s) })
 	greeting, err := ai.Complete(ctx, ai.Params{
-		SystemPrompt: "You are a friendly IRC bot. Generate a short, casual welcome message for a new user joining an IRC channel for the first time. One sentence only. Address the user by their nick. Be warm but not over the top. No punctuation and no emojis.",
-		UserPrompt:   fmt.Sprintf("A user named %s just joined the channel for the first time. Welcome them!", nick),
+		SystemPrompt: "You are a friendly IRC bot. When a new user joins, ask them an interesting casual question. One sentence only. Address the user by their nick. No punctuation and no emojis." + dayClause,
+		UserPrompt:   fmt.Sprintf("A user named %s just joined the channel. Ask them a question!", nick),
 	})
 	if err != nil {
 		return fmt.Errorf("ai.Complete: %w", err)

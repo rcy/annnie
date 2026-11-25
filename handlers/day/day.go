@@ -37,7 +37,7 @@ func NationalDay(params responder.Responder) error {
 	}
 	today := strings.ToLower(time.Now().In(location).Format("Jan/02"))
 
-	event, err := getEvent(today)
+	event, err := GetEvent(today)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func NationalDay(params responder.Responder) error {
 	return nil
 }
 
-func getEvent(day string) (string, error) {
+func GetEvent(day string) (string, error) {
 	var err error
 	stack, ok := dayDays[day]
 	if !ok {

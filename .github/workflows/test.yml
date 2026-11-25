@@ -2,9 +2,7 @@ name: Test
 run-name: Test (${{ github.actor }})
 on:
   pull_request:
-  push:
-    branches:
-      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest

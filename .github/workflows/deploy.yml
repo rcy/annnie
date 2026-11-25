@@ -6,17 +6,11 @@ on:
       - main
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version-file: 'go.mod'
-      - name: Run tests
-        run: make test
+    uses: ./.github/workflows/test.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
   deploy:
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

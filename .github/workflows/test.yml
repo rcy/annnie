@@ -2,6 +2,7 @@ name: Test
 run-name: Test (${{ github.actor }})
 on:
   pull_request:
+  workflow_call:
 
 jobs:
   test:

@@ -4,10 +4,13 @@ import (
 	"goirc/bot"
 	"strings"
 	"testing"
+
+	irc "github.com/thoj/go-ircevent"
 )
 
 func TestMain(t *testing.T) {
 	var b bot.Bot
+	b.Conn = irc.IRC("testbot", "testbot")
 
 	addHandlers(&b)
 

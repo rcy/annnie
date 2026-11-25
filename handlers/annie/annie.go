@@ -116,7 +116,7 @@ func BuildSystemPrompt(ctx context.Context, q *model.Queries, kind, override str
 * Respond in lower case, with minimal punctuation (commas are ok).
 </instructions>
 
-%s`, override), nil
+%s`, override, ""), nil
 	}
 
 	return "", nil

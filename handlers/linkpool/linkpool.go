@@ -110,5 +110,6 @@ func (p pool) PushNote(ctx context.Context, params PushNoteParams) (model.Note, 
 		Nick:   sql.NullString{String: params.Nick, Valid: true},
 		Kind:   params.Kind,
 		Text:   sql.NullString{String: params.Text, Valid: true},
+		Anon:   true,
 	})
 }

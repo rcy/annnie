@@ -66,7 +66,7 @@ func (r iqairResponse) AQIString() string {
 	}
 	p := r.Data.Current.Pollution
 	level := aqiLevel(p.Aqius)
-	return fmt.Sprintf("aqi %d %s", p.Aqius, level.emoji)
+	return fmt.Sprintf("AQI %d %s %s", p.Aqius, level.emoji, level.label)
 }
 
 type aqiLevelInfo struct {

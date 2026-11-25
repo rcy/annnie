@@ -7,6 +7,7 @@ import (
 )
 
 var Rev = "main"
+var Msg = ""
 
 func URL() (string, error) {
 	var id int64

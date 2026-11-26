@@ -60,9 +60,12 @@
           pointRadius: 3,
         });
       }
+      // Nicks cover different dates, so the axis needs the sorted union of them.
+      // Otherwise chart.js orders dates by first appearance across datasets.
+      const labels = [...new Set(Object.values(data).flat().map(p => p.date))].sort();
       new Chart(document.getElementById('networth'), {
         type: 'line',
-        data: {datasets},
+        data: {labels, datasets},
         options: {
           scales: {
             x: {type: 'category', title: {display: true, text: 'date'}},

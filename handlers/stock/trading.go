@@ -291,11 +291,23 @@ func cashBalance(txns []model.StockTransaction) float64 {
 		switch t.Verb {
 		case "BUY":
 			cash -= t.AmountUsd
-		case "SELL":
+		case "SELL", "CREDIT":
 			cash += t.AmountUsd
 		}
 	}
 	return cash
+}
+
+func Credit(ctx context.Context, nick string, amount float64) error {
+	q := model.New(db.DB)
+	return q.InsertStockTransaction(ctx, model.InsertStockTransactionParams{
+		Nick:      nick,
+		Verb:      "CREDIT",
+		Symbol:    "",
+		AmountUsd: amount,
+		Shares:    0,
+		Price:     0,
+	})
 }
 
 func sharesHeld(txns []model.StockTransaction, symbol string) float64 {

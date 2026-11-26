@@ -33,11 +33,11 @@
       <tr>
         <td>{{time .CreatedAt}}</td>
         <td>{{.Nick}}</td>
-        <td class="{{if eq .Verb "BUY"}}buy{{else}}sell{{end}}">{{.Verb}}</td>
+        <td class="{{if eq .Verb "BUY"}}buy{{else if eq .Verb "SELL"}}sell{{end}}">{{.Verb}}</td>
         <td>{{.Symbol}}</td>
         <td class="right">${{printf "%.0f" .AmountUsd}}</td>
-        <td class="right">{{printf "%.4g" .Shares}}</td>
-        <td class="right">${{printf "%.2f" .Price}}</td>
+        <td class="right">{{if ne .Verb "CREDIT"}}{{printf "%.4g" .Shares}}{{end}}</td>
+        <td class="right">{{if ne .Verb "CREDIT"}}${{printf "%.2f" .Price}}{{end}}</td>
       </tr>
       {{end}}
     </table>

@@ -273,7 +273,7 @@ func HandlePortfolio(params responder.Responder) error {
 	}
 
 	portfolio := cash + totalValue
-	pnl := portfolio - startingCash
+	pnl := marketPnL(portfolio, txns)
 	arrow := "↑"
 	if pnl < 0 {
 		arrow = "↓"
@@ -296,6 +296,18 @@ func cashBalance(txns []model.StockTransaction) float64 {
 		}
 	}
 	return cash
+}
+
+// marketPnL returns the amount gained or lost on the market. Grants add to the
+// portfolio value, but are not market gains.
+func marketPnL(portfolio float64, txns []model.StockTransaction) float64 {
+	pnl := portfolio - startingCash
+	for _, t := range txns {
+		if t.Verb == "CREDIT" {
+			pnl -= t.AmountUsd
+		}
+	}
+	return pnl
 }
 
 func Credit(ctx context.Context, nick string, amount float64) error {

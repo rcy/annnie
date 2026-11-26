@@ -140,7 +140,17 @@ func addHandlers(b *bot.Bot) {
 			return
 		}
 
-		b.Conn.Privmsgf(b.Channel, "on this day in %d, %s posted: %s", note.CreatedAt.Year(), note.Nick.String, note.Text.String)
+		var reward string
+		amount := float64(10 * (time.Now().Year() - note.CreatedAt.Year()))
+		if note.Nick.String != "" {
+			if err := stock.Credit(context.TODO(), note.Nick.String, amount); err != nil {
+				log.Printf("on this day: credit %s: %v", note.Nick.String, err)
+			} else {
+				reward = fmt.Sprintf(" (+$%.0f)", amount)
+			}
+		}
+
+		b.Conn.Privmsgf(b.Channel, "on this day in %d, %s posted: %s%s", note.CreatedAt.Year(), note.Nick.String, note.Text.String, reward)
 	})
 	if err != nil {
 		panic(err)

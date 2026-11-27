@@ -10,14 +10,18 @@ import (
 	"goirc/internal/ai"
 	internalmcp "goirc/internal/mcp"
 	db "goirc/model"
+	appriver "goirc/river"
 	"goirc/util"
 	"goirc/web"
+	"goirc/workers/noop"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/rcy/evoke"
+	"github.com/riverqueue/river"
 )
 
 //go:generate go tool github.com/sqlc-dev/sqlc/cmd/sqlc generate --file db/sqlc.yaml
@@ -62,8 +66,15 @@ func main() {
 
 	addHandlers(b)
 
-	go b.Loop()
-	go web.Serve(db.DB, b, es)
+	// River job queue
+	dataDir := filepath.Dir(evokeFile)
+	workers := river.NewWorkers()
+	river.AddWorker(workers, &noop.JobWorker{})
+
+	riverClient, err := appriver.New(dataDir, workers)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(),
 		syscall.SIGINT,
@@ -71,8 +82,16 @@ func main() {
 	)
 	defer stop()
 
+	if err := riverClient.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	go b.Loop()
+	go web.Serve(db.DB, b, es, riverClient)
+
 	<-ctx.Done()
 	es.MustInsert(b.Channel, events.BotQuit{Nick: b.Conn.GetNick()})
+	_ = riverClient.Stop(context.Background())
 
 	fmt.Println("Clean shutdown.")
 }

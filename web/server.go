@@ -19,6 +19,7 @@ import (
 	"goirc/internal/summary"
 	"goirc/internal/uploads"
 	db "goirc/model"
+	appriver "goirc/river"
 	"goirc/web/auth"
 	"html/template"
 	"io"
@@ -113,7 +114,7 @@ func HandleDeauth(params responder.Responder) error {
 	return nil
 }
 
-func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
+func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service, riverClient *appriver.Client) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -294,6 +295,8 @@ func Serve(db *sqlx.DB, b *bot.Bot, es *evoke.Service) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.NewService(q).Middleware)
+
+		r.Handle("/river/*", riverClient.UIHandler())
 
 		r.Post("/snarf-timezone", func(w http.ResponseWriter, r *http.Request) {
 			nick, ok := r.Context().Value(auth.NickKey).(string)

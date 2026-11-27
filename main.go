@@ -14,11 +14,13 @@ import (
 	"goirc/util"
 	"goirc/web"
 	"goirc/workers/noop"
+	"goirc/workers/portfoliosnapshot"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/rcy/evoke"
 	"github.com/riverqueue/river"
@@ -70,8 +72,20 @@ func main() {
 	dataDir := filepath.Dir(evokeFile)
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &noop.JobWorker{})
+	river.AddWorker(workers, &portfoliosnapshot.JobWorker{})
 
-	riverClient, err := appriver.New(dataDir, workers)
+	vancouver, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Fatal(err)
+	}
+	snapshotSchedule, err := appriver.Cron("0 15 13 * * 1,2,3,4,5", vancouver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	riverClient, err := appriver.New(dataDir, workers,
+		portfoliosnapshot.PeriodicJob(snapshotSchedule, vancouver),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

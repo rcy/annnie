@@ -156,13 +156,6 @@ func addHandlers(b *bot.Bot) {
 		panic(err)
 	}
 
-	err = c.AddFunc("0 15 13 * * 1,2,3,4,5", func() {
-		stock.SnapshotPortfolios()
-	})
-	if err != nil {
-		panic(err)
-	}
-
 	c.Start()
 
 	b.Handle(`^!mcp\b`, mcp.Handle)

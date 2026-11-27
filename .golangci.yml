@@ -5,3 +5,4 @@ linters:
       exclude-functions:
         - (*database/sql.Tx).Rollback
         - (io.ReadCloser).Close
+        - (*database/sql.DB).Close
